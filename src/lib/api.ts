@@ -97,6 +97,35 @@ export interface ApiThana {
   bn_name?: string;
 }
 
+export interface ApiFooterSettings {
+  id?: number;
+  store_name?: string;
+  logo_image?: string | null;
+  address?: string;
+  contact_address?: string;
+  map_url?: string;
+  copyright_text?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  working_hours_1?: string;
+  working_hours_2?: string;
+  contact_hours?: string;
+  facebook_url?: string;
+  instagram_url?: string;
+  youtube_url?: string;
+  pinterest_url?: string;
+  linkedin_url?: string;
+  twitter_url?: string;
+  tiktok_url?: string;
+  column_1_title?: string;
+  column_1_links?: { label: string; url: string }[];
+  column_2_title?: string;
+  column_2_links?: { label: string; url: string }[];
+  column_3_title?: string;
+  column_3_links?: { label: string; url: string }[];
+  payment_methods?: string[];
+}
+
 export interface OrderItemPayload {
   product_id: number;
   quantity: number;
@@ -320,6 +349,10 @@ export async function deleteAuthAccount() {
   return fetchFromApi<{ success: boolean; message: string }>("/auth/delete-account", {
     method: "POST",
   });
+}
+
+export async function getFooterSettings() {
+  return fetchFromApi<{ success: boolean; data: ApiFooterSettings }>("/footer-settings");
 }
 
 export async function logoutCustomer() {
