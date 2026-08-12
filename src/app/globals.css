@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Hide Next.js Development Overlay Toast Badge */
+[data-nextjs-toast],
+next-route-announcer,
+[data-next-badge],
+#next-logo,
+button[aria-label="Open Next.js DevTools"] {
+  display: none !important;
+}
+

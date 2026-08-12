@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "leftImage": "/hero_left_card.png",
+    "rightImage": "/hero_chia.png",
+    "tagline": "HAVE A LOOK ON US !",
+    "titleLine1": "NEW YEAR",
+    "titleLine2": "OFFER",
+    "discountText": "Grab up to 40 % discount",
+    "linkUrl": "/categories/organic-food"
+  },
+  {
+    "id": 2,
+    "leftImage": "/hero_left_card.png",
+    "rightImage": "/hero_beauty.png",
+    "tagline": "100% PURE & NATURAL",
+    "titleLine1": "BEAUTY &",
+    "titleLine2": "SKINCARE",
+    "discountText": "Flat 25% OFF on Premium Care",
+    "linkUrl": "/categories/beauty"
+  },
+  {
+    "id": 3,
+    "leftImage": "/hero_left_card.png",
+    "rightImage": "/hero_honey.png",
+    "tagline": "PURE SUNDARBAN HONEY",
+    "titleLine1": "ORGANIC",
+    "titleLine2": "RAW HONEY",
+    "discountText": "Save 30% ON Honey Jar Deals",
+    "linkUrl": "/categories/organic-food"
+  },
+  {
+    "id": 4,
+    "leftImage": "/hero_left_card.png",
+    "rightImage": "/hero_supplements.png",
+    "tagline": "BOOST YOUR HEALTH",
+    "titleLine1": "FOOD",
+    "titleLine2": "SUPPLEMENTS",
+    "discountText": "Buy 1 Get 1 Free Today",
+    "linkUrl": "/categories/food-supplements"
+  },
+  {
+    "id": 5,
+    "leftImage": "/hero_left_card.png",
+    "rightImage": "/hero_baby.png",
+    "tagline": "GENTLE CARE FOR BABIES",
+    "titleLine1": "BABIES",
+    "titleLine2": "ESSENTIALS",
+    "discountText": "Up to 35% OFF Baby Care",
+    "linkUrl": "/categories/babies-hub"
+  }
+]
