@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Star,
   Heart,
@@ -102,9 +103,12 @@ function normalize(p: any): NormalizedProduct {
   };
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
-export default function AllProductsPage() {
+// ─── Content Component ───────────────────────────────────────────────────────
+function AllProductsContent() {
   const { addToCart, addToWishlist, isInWishlist, setQuickViewProduct } = useShop();
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get("search") || searchParams.get("q") || "";
+  const urlCategory = searchParams.get("category") || "";
 
   // Data state
   const [categories, setCategories] = useState<Category[]>([]);
@@ -116,7 +120,13 @@ export default function AllProductsPage() {
   // Filter / sort state
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState("default");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(urlSearch);
+
+  useEffect(() => {
+    if (urlSearch) {
+      setSearchQuery(urlSearch);
+    }
+  }, [urlSearch]);
 
   // Fetch categories from DB
   useEffect(() => {
@@ -126,10 +136,16 @@ export default function AllProductsPage() {
       .then((res: any) => {
         const catList = res.data || (Array.isArray(res) ? res : []);
         setCategories(catList);
+        if (urlCategory) {
+          const matched = catList.find((c: any) => c.slug === urlCategory || String(c.id) === urlCategory);
+          if (matched) {
+            setSelectedCategoryId(matched.id);
+          }
+        }
       })
       .catch(() => setError("Failed to load categories."))
       .finally(() => setLoadingCats(false));
-  }, []);
+  }, [urlCategory]);
 
   // Fetch all products
   useEffect(() => {
@@ -497,5 +513,13 @@ export default function AllProductsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AllProductsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-emerald-600" /></div>}>
+      <AllProductsContent />
+    </Suspense>
   );
 }

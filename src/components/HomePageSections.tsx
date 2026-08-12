@@ -10,114 +10,206 @@ import {
   ChevronRight as ChevronRightIcon
 } from "lucide-react";
 
+import { getBanners } from "@/lib/api";
+
 export function HeroSlider() {
+  const [slides, setSlides] = useState<any[]>(slidersData);
   const [leftIndex, setLeftIndex] = useState(0);
   const [rightIndex, setRightIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
-    if (isPaused) return;
+    async function loadDynamicBanners() {
+      try {
+        const res = await getBanners();
+        if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const activeBanners = res.data
+            .filter((b) => b.is_active !== false)
+            .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
+
+          if (activeBanners.length > 0) {
+            const formatted = activeBanners.map((b) => {
+              let t1 = b.title_line1 || "";
+              let t2 = b.title_line2 || "";
+              if (!t1 && !t2 && b.title) {
+                const words = b.title.split(" ");
+                t1 = words.slice(0, Math.ceil(words.length / 2)).join(" ");
+                t2 = words.slice(Math.ceil(words.length / 2)).join(" ");
+              }
+
+              return {
+                id: b.id,
+                tagline: b.badge || b.tagline || "100% PURE & NATURAL",
+                titleLine1: t1 || b.title || "EXCLUSIVE",
+                titleLine2: t2 || "",
+                discountText: b.subtitle || "",
+                linkUrl: b.cta_link || "/",
+                ctaText: b.cta_text || "SHOP NOW",
+                bgColor: b.bg_color || "#dfcebe",
+                rightBgColor: b.right_bg_color || b.bg_color || "#dfcebe",
+                leftImage: b.left_image && b.left_image.trim() !== "" ? b.left_image : "/hero_left_card.png",
+                rightImage: b.image && b.image.trim() !== "" ? b.image : "/hero_honey.png",
+              };
+            });
+            setSlides(formatted);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load banners:", err);
+      }
+    }
+
+    loadDynamicBanners();
+  }, []);
+
+  const totalSlides = slides.length;
+
+  // Auto-advance both panels together every 4.5s when not paused
+  useEffect(() => {
+    if (isPaused || totalSlides <= 1) return;
 
     const timer = setInterval(() => {
-      setLeftIndex((prev) => (prev + 1) % slidersData.length);
-      setRightIndex((prev) => (prev + 1) % slidersData.length);
-    }, 4000);
+      setLeftIndex((prev) => (prev + 1) % totalSlides);
+      setRightIndex((prev) => (prev + 1) % totalSlides);
+    }, 4500);
 
     return () => clearInterval(timer);
-  }, [isPaused]);
+  }, [isPaused, totalSlides]);
 
-  const handleLeftClick = () => {
-    setLeftIndex((prev) => (prev === 0 ? slidersData.length - 1 : prev - 1));
+  // LEFT arrow: only changes the left promo panel
+  const handleLeftPrev = () => {
+    setLeftIndex((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
   };
 
-  const handleRightClick = () => {
-    setRightIndex((prev) => (prev + 1) % slidersData.length);
+  // RIGHT arrow: only changes the right product image panel
+  const handleRightNext = () => {
+    setRightIndex((prev) => (prev + 1) % totalSlides);
   };
 
-  const leftSlide = slidersData[leftIndex];
-  const rightSlide = slidersData[rightIndex];
+  const leftSlide = slides[leftIndex] || slides[0] || {};
+  const rightSlide = slides[rightIndex] || slides[0] || {};
+  const leftBgColor = leftSlide.bgColor || "#dfcebe";
+  const rightBgColor = rightSlide.rightBgColor || rightSlide.bgColor || "#dfcebe";
 
   return (
     <div 
-      className="w-full bg-[#dfcebe] overflow-hidden shadow-sm flex flex-col md:flex-row items-center border-b border-amber-200/50 relative group min-h-[420px]"
+      className="w-full overflow-hidden shadow-sm flex flex-col md:flex-row items-stretch border-b border-amber-200/50 relative group min-h-[420px]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      <div className="w-full md:w-1/2 min-h-[360px] relative overflow-hidden flex items-center justify-center p-6 sm:p-12 text-center">
-        <Image 
-          key={`left-${leftIndex}`}
-          src={leftSlide.leftImage} 
-          alt="Banner pattern background"
-          fill
-          sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-cover object-center transition-all duration-700 opacity-60"
-          priority
-        />
+      {/* ═══ LEFT PROMO PANEL — navigated by LEFT arrow ═══ */}
+      <div 
+        className="w-full md:w-1/2 min-h-[360px] relative overflow-hidden flex items-center justify-center p-6 sm:p-12 text-center transition-colors duration-500"
+        style={{ backgroundColor: leftBgColor }}
+      >
+        {leftSlide.leftImage && (
+          <img 
+            key={`left-bg-${leftIndex}`}
+            src={leftSlide.leftImage} 
+            alt="Banner pattern background"
+            className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700 pointer-events-none"
+            onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
+          />
+        )}
         <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]"></div>
 
+        {/* Left panel content */}
         <div className="relative z-10 space-y-3 max-w-sm mx-auto">
-          <span className="text-[#0b3b82] text-xs sm:text-sm font-semibold tracking-widest uppercase block">
-            {leftSlide.tagline}
-          </span>
+          {leftSlide.tagline && (
+            <span className="text-[#0b3b82] text-xs sm:text-sm font-semibold tracking-widest uppercase block">
+              {leftSlide.tagline}
+            </span>
+          )}
           
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#b8860b] leading-none uppercase">
-            {leftSlide.titleLine1} <br /> {leftSlide.titleLine2}
+            {leftSlide.titleLine1} {leftSlide.titleLine2 && <><br /> {leftSlide.titleLine2}</>}
           </h1>
 
-          <p className="text-[#e60000] text-lg sm:text-2xl font-bold tracking-wide pt-1">
-            {leftSlide.discountText}
-          </p>
+          {leftSlide.discountText && (
+            <p className="text-[#e60000] text-lg sm:text-2xl font-bold tracking-wide pt-1">
+              {leftSlide.discountText}
+            </p>
+          )}
 
           <div className="pt-3">
-            <Link href={leftSlide.linkUrl} className="inline-block bg-[#0b3b82] hover:bg-[#b30047] text-white text-xs sm:text-sm font-bold px-7 py-3 rounded-full transition-all shadow-md hover:scale-105">
-              SHOP NOW
+            <Link 
+              href={leftSlide.linkUrl || "/"} 
+              className="inline-block bg-[#0b3b82] hover:bg-[#b30047] text-white text-xs sm:text-sm font-bold px-7 py-3 rounded-full transition-all shadow-md hover:scale-105"
+            >
+              {leftSlide.ctaText || "SHOP NOW"}
             </Link>
           </div>
         </div>
+
+        {/* Left dot indicators */}
+        {totalSlides > 1 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+            {slides.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setLeftIndex(idx)}
+                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                  leftIndex === idx ? "w-6 bg-[#0b3b82]" : "w-2 bg-slate-400/50 hover:bg-slate-600"
+                }`}
+                title={`Left panel slide ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      <div className="w-full md:w-1/2 h-[320px] sm:h-[400px] relative overflow-hidden border-l border-amber-100/50">
-        <Image 
-          key={`right-${rightIndex}`}
-          src={rightSlide.rightImage} 
-          alt="Product Showcase"
-          fill
-          sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-cover object-center transition-all duration-700 hover:scale-105"
-          priority
+      {/* ═══ RIGHT PRODUCT IMAGE PANEL — navigated by RIGHT arrow ═══ */}
+      <div 
+        className="w-full md:w-1/2 min-h-[360px] sm:min-h-[420px] relative overflow-hidden flex items-center justify-center transition-colors duration-500"
+        style={{ backgroundColor: rightBgColor }}
+      >
+        <img 
+          key={`right-img-${rightIndex}`}
+          src={rightSlide.rightImage || "/hero_honey.png"} 
+          alt={rightSlide.titleLine1 || "Product Showcase"}
+          className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700 hover:scale-105"
+          onError={(e) => { (e.target as HTMLImageElement).src = "/hero_honey.png"; }}
         />
+
+        {/* Right dot indicators */}
+        {totalSlides > 1 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+            {slides.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setRightIndex(idx)}
+                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                  rightIndex === idx ? "w-6 bg-[#0b3b82]" : "w-2 bg-slate-400/50 hover:bg-slate-600"
+                }`}
+                title={`Right panel slide ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      <button 
-        onClick={handleLeftClick}
-        title="Change Left Banner Slide"
-        className="absolute left-4 top-1/2 -translate-y-1/2 bg-[#0b3b82] hover:bg-[#b30047] text-white p-3 rounded-full shadow-xl z-20 transition-all hover:scale-110 active:scale-95"
-      >
-        <ChevronLeft className="w-6 h-6 stroke-[3]" />
-      </button>
+      {/* ═══ Navigation Arrows — each controls its own panel ═══ */}
+      {totalSlides > 1 && (
+        <>
+          {/* LEFT arrow → changes ONLY the left promo panel */}
+          <button 
+            onClick={handleLeftPrev}
+            title="Previous promo slide"
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-[#0b3b82] hover:bg-[#b30047] text-white p-3 rounded-full shadow-xl z-20 transition-all hover:scale-110 active:scale-95 cursor-pointer"
+          >
+            <ChevronLeft className="w-6 h-6 stroke-[3]" />
+          </button>
 
-      <button 
-        onClick={handleRightClick}
-        title="Change Right Image Slide"
-        className="absolute right-4 top-1/2 -translate-y-1/2 bg-[#0b3b82] hover:bg-[#b30047] text-white p-3 rounded-full shadow-xl z-20 transition-all hover:scale-110 active:scale-95"
-      >
-        <ChevronRight className="w-6 h-6 stroke-[3]" />
-      </button>
-
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20">
-        {slidersData.map((_, idx) => (
-          <button
-            key={idx}
-            onClick={() => {
-              setLeftIndex(idx);
-              setRightIndex(idx);
-            }}
-            className={`h-2.5 rounded-full transition-all duration-300 ${
-              leftIndex === idx ? "w-8 bg-[#0b3b82]" : "w-2.5 bg-slate-400/60 hover:bg-slate-600"
-            }`}
-          />
-        ))}
-      </div>
+          {/* RIGHT arrow → changes ONLY the right product panel */}
+          <button 
+            onClick={handleRightNext}
+            title="Next product slide"
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-[#0b3b82] hover:bg-[#b30047] text-white p-3 rounded-full shadow-xl z-20 transition-all hover:scale-110 active:scale-95 cursor-pointer"
+          >
+            <ChevronRight className="w-6 h-6 stroke-[3]" />
+          </button>
+        </>
+      )}
     </div>
   );
 }

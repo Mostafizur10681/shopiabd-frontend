@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Search, Heart, ShoppingCart, User, Truck, X, ChevronDown, ChevronRight, Plus, Minus, Menu, Phone } from "lucide-react";
 import { useShop } from "@/context/ShopContext";
 import productsData from "@/data/products.json";
@@ -23,6 +24,7 @@ type Category = {
 };
 
 export function Header() {
+  const router = useRouter();
   const [showTopNotice, setShowTopNotice] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -30,6 +32,7 @@ export function Header() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<number | null>(null);
   const { wishlist, cart, user, updateQuantity, removeFromCart, setQuickViewProduct } = useShop();
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const totalCartCount = cart.reduce((acc, item) => acc + (item.quantity || 1), 0);
   const cartSubtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -66,30 +69,53 @@ export function Header() {
 
     const loadProducts = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/v1/products?per_page=50`);
-        if (!res.ok) return;
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/v1/products?per_page=100`);
+        if (!res.ok) throw new Error("API not ready");
         const json = await res.json();
         const prods = json.data?.data || json.data || [];
-        if (Array.isArray(prods)) {
-          setAllProducts(prods);
+        if (Array.isArray(prods) && prods.length > 0) {
+          const mapped = prods.map((p: any) => ({
+            id: p.id,
+            name: p.name || "",
+            slug: p.slug || String(p.id),
+            price: parseFloat(String(p.price || 0)) || 0,
+            category: typeof p.category === "string" ? p.category : (p.category?.name || "General"),
+            mainImage: p.main_image || p.image || p.mainImage || (Array.isArray(p.images) && p.images[0]) || "/hero_honey.png",
+          }));
+          setAllProducts(mapped);
+          return;
         }
       } catch {
         // Fallback to static data
-        setAllProducts(productsData);
       }
+
+      const staticMapped = (productsData as any[]).map((p: any) => ({
+        id: p.id,
+        name: p.name || "",
+        slug: p.slug || String(p.id),
+        price: parseFloat(String(p.price || 0)) || 0,
+        category: typeof p.category === "string" ? p.category : (p.category?.name || "General"),
+        mainImage: p.mainImage || p.image || "/hero_honey.png",
+      }));
+      setAllProducts(staticMapped);
     };
 
     loadCategories();
     loadProducts();
   }, []);
 
-  const searchSource = allProducts.length > 0 ? allProducts : productsData;
   const searchResults = searchQuery.trim()
-    ? searchSource.filter((p) =>
-      (p.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (typeof p.category === "string" ? p.category : p.category?.name || "").toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    ? allProducts.filter((p) =>
+        (p.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.category || "").toLowerCase().includes(searchQuery.toLowerCase())
+      )
     : [];
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!searchQuery.trim()) return;
+    router.push(`/all-products?search=${encodeURIComponent(searchQuery.trim())}`);
+  };
 
   return (
     <header className="w-full bg-white font-sans border-b border-slate-200 sticky top-0 z-50 shadow-sm">
@@ -101,7 +127,7 @@ export function Header() {
           </div>
           <button
             onClick={() => setShowTopNotice(false)}
-            className="text-white/80 hover:text-white absolute right-4 top-1/2 -translate-y-1/2 p-1"
+            className="text-white/80 hover:text-white absolute right-4 top-1/2 -translate-y-1/2 p-1 cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -134,8 +160,8 @@ export function Header() {
         </div>
 
         {/* Center Search Input with Instant Dropdown Results (Desktop / Tablet) */}
-        <div className="flex-1 max-w-xl mx-auto relative hidden md:block">
-          <div className="relative">
+        <div ref={searchContainerRef} className="flex-1 max-w-xl mx-auto relative hidden md:block">
+          <form onSubmit={handleSearchSubmit} className="relative">
             <input
               type="text"
               placeholder="Search for products (e.g. Maca, Chia, VWash...)"
@@ -147,16 +173,16 @@ export function Header() {
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             ) : (
-              <button type="button" className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-700 hover:text-[#0b3b82] transition-colors">
+              <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-700 hover:text-[#0b3b82] transition-colors cursor-pointer" title="Search">
                 <Search className="w-4 h-4 stroke-[2.5]" />
               </button>
             )}
-          </div>
+          </form>
 
           {/* Instant Search Results Dropdown */}
           {searchQuery.trim() !== "" && (
@@ -166,35 +192,45 @@ export function Header() {
                   No products found matching &quot;<span className="font-semibold text-slate-700">{searchQuery}</span>&quot;
                 </div>
               ) : (
-                searchResults.map((prod) => (
-                  <div
-                    key={prod.id}
+                <>
+                  {searchResults.slice(0, 8).map((prod) => (
+                    <Link
+                      key={prod.id}
+                      href={`/product/${prod.slug || prod.id}`}
+                      onClick={() => setSearchQuery("")}
+                      className="p-3 flex items-center gap-3 hover:bg-slate-50 cursor-pointer transition block"
+                    >
+                      <div className="w-12 h-12 bg-slate-100 rounded-lg relative overflow-hidden shrink-0 flex items-center justify-center p-1">
+                        <img
+                          src={prod.mainImage}
+                          alt={prod.name}
+                          className="w-full h-full object-contain"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "/hero_honey.png"; }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-xs font-bold text-slate-800 truncate hover:text-[#0b3b82]">
+                          {prod.name}
+                        </h4>
+                        <p className="text-[11px] text-slate-400">{prod.category}</p>
+                      </div>
+                      <div className="text-sm font-black text-[#ff8c00] shrink-0">
+                        ৳{typeof prod.price === "number" ? prod.price.toFixed(2) : prod.price}
+                      </div>
+                    </Link>
+                  ))}
+
+                  <div 
                     onClick={() => {
-                      setQuickViewProduct(prod);
+                      handleSearchSubmit();
                       setSearchQuery("");
-                    }}
-                    className="p-3 flex items-center gap-3 hover:bg-slate-50 cursor-pointer transition"
+                    }} 
+                    className="p-3 bg-slate-50 hover:bg-slate-100 text-center text-xs font-bold text-[#0b3b82] cursor-pointer border-t border-slate-100 flex items-center justify-center gap-1 transition"
                   >
-                    <div className="w-12 h-12 bg-slate-100 rounded-lg relative overflow-hidden shrink-0 flex items-center justify-center p-1">
-                      <Image
-                        src={prod.mainImage}
-                        alt={prod.name}
-                        fill
-                        sizes="48px"
-                        className="object-contain"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-bold text-slate-800 truncate hover:text-[#0b3b82]">
-                        {prod.name}
-                      </h4>
-                      <p className="text-[11px] text-slate-400">{prod.category}</p>
-                    </div>
-                    <div className="text-sm font-black text-[#ff8c00] shrink-0">
-                      ৳{typeof prod.price === "number" ? prod.price.toFixed(2) : prod.price}
-                    </div>
+                    <span>View all {searchResults.length} results for &quot;{searchQuery}&quot;</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </div>
-                ))
+                </>
               )}
             </div>
           )}
@@ -370,7 +406,7 @@ export function Header() {
 
       {/* Mobile Search Bar Row (Always visible on mobile & small screens) */}
       <div className="md:hidden px-4 pb-3 pt-1 bg-white border-t border-slate-100 relative">
-        <div className="relative">
+        <form onSubmit={handleSearchSubmit} className="relative">
           <input
             type="text"
             placeholder="Search products (e.g. Maca, Chia, VWash...)"
@@ -382,16 +418,16 @@ export function Header() {
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           ) : (
-            <button type="button" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-700">
+            <button type="submit" className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-700 cursor-pointer" title="Search">
               <Search className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
           )}
-        </div>
+        </form>
 
         {/* Mobile Instant Search Results Dropdown */}
         {searchQuery.trim() !== "" && (
@@ -399,25 +435,41 @@ export function Header() {
             {searchResults.length === 0 ? (
               <div className="p-4 text-center text-slate-400 text-xs">No products found matching &quot;{searchQuery}&quot;</div>
             ) : (
-              searchResults.map((prod) => (
-                <div
-                  key={prod.id}
+              <>
+                {searchResults.slice(0, 6).map((prod) => (
+                  <Link
+                    key={prod.id}
+                    href={`/product/${prod.slug || prod.id}`}
+                    onClick={() => setSearchQuery("")}
+                    className="p-2.5 flex items-center gap-3 hover:bg-slate-50 cursor-pointer block"
+                  >
+                    <div className="w-9 h-9 relative shrink-0 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 p-0.5">
+                      <img 
+                        src={prod.mainImage} 
+                        alt={prod.name} 
+                        className="w-full h-full object-contain" 
+                        onError={(e) => { (e.target as HTMLImageElement).src = "/hero_honey.png"; }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-slate-800 truncate">{prod.name}</h4>
+                      <p className="text-[10px] text-slate-400">{prod.category}</p>
+                    </div>
+                    <div className="text-xs font-black text-[#ff8c00] shrink-0">৳{prod.price}</div>
+                  </Link>
+                ))}
+
+                <div 
                   onClick={() => {
-                    setQuickViewProduct(prod);
+                    handleSearchSubmit();
                     setSearchQuery("");
-                  }}
-                  className="p-2.5 flex items-center gap-3 hover:bg-slate-50 cursor-pointer"
+                  }} 
+                  className="p-2.5 bg-slate-50 hover:bg-slate-100 text-center text-xs font-bold text-[#0b3b82] cursor-pointer border-t border-slate-100 flex items-center justify-center gap-1"
                 >
-                  <div className="w-9 h-9 relative shrink-0 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 p-0.5">
-                    <Image src={prod.mainImage} alt={prod.name} fill className="object-contain" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-slate-800 truncate">{prod.name}</h4>
-                    <p className="text-[10px] text-slate-400">{prod.category}</p>
-                  </div>
-                  <div className="text-xs font-black text-[#ff8c00] shrink-0">৳{prod.price}</div>
+                  <span>View all {searchResults.length} results</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </div>
-              ))
+              </>
             )}
           </div>
         )}

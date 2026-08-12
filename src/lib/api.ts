@@ -53,10 +53,20 @@ export interface ApiCategory {
 export interface ApiBanner {
   id: number;
   title?: string;
+  title_line1?: string;
+  title_line2?: string;
   subtitle?: string;
+  badge?: string;
+  tagline?: string;
   image?: string;
-  link?: string;
-  status?: boolean;
+  left_image?: string;
+  bg_color?: string;
+  right_bg_color?: string;
+  cta_text?: string;
+  cta_link?: string;
+  order?: number;
+  is_active?: boolean;
+  menu_location?: string;
 }
 
 export interface ApiFaq {
