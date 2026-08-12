@@ -134,15 +134,41 @@ export interface OrderItemPayload {
 
 export interface CreateOrderPayload {
   customer_name: string;
+  company_name?: string;
   customer_phone: string;
   customer_email?: string;
-  division: string;
+  country?: string;
+  division?: string;
   district: string;
-  thana: string;
+  thana?: string;
   address: string;
+  town_city?: string;
+  postcode?: string;
+  order_notes?: string;
+  payment_method?: string;
+  ship_different?: boolean;
+  ship_customer_name?: string;
+  ship_company_name?: string;
+  ship_country?: string;
+  ship_address?: string;
+  ship_town_city?: string;
+  ship_postcode?: string;
+  ship_district?: string;
+  ship_phone?: string;
   shipping_amount?: number;
   user_id?: number;
   items: OrderItemPayload[];
+}
+
+export async function placeOrder(payload: CreateOrderPayload) {
+  return fetchFromApi<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>("/orders", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function fetchFromApi<T>(endpoint: string, options?: RequestInit): Promise<T> {

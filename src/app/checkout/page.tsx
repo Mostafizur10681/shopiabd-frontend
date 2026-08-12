@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 import { 
   ShieldCheck, 
   Truck, 
-  CheckCircle2, 
   ShoppingBag,
-  RotateCcw
+  RotateCcw,
+  Loader2
 } from "lucide-react";
 import { useShop } from "@/context/ShopContext";
+import { placeOrder, CreateOrderPayload } from "@/lib/api";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -47,13 +48,6 @@ export default function CheckoutPage() {
 
   const [orderNotes, setOrderNotes] = useState("");
 
-  // Payment Method Selection State ('bank' | 'bkash' | 'cod')
-  const [paymentMethod, setPaymentMethod] = useState<"bank" | "bkash" | "cod">("cod");
-  
-  // bKash details
-  const [bkashNumber, setBkashNumber] = useState("");
-  const [trxId, setTrxId] = useState("");
-
   const subtotal = cart.reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 1), 0);
   const shippingFee = district.toLowerCase().includes("dhaka") ? 60 : 120;
   const finalShippingFee = subtotal >= 3000 ? 0 : shippingFee;
@@ -68,65 +62,64 @@ export default function CheckoutPage() {
     }
 
     if (!firstName || !streetAddress1 || !phone) {
-      showToast("Please fill in name, address, and phone number!");
+      showToast("Please fill in your name, street address, and phone number!");
       return;
     }
 
-    if (paymentMethod === "bkash" && (!bkashNumber || !trxId)) {
-      showToast("Please enter your bKash sender number and Transaction ID!");
+    if (shipDifferent && (!shipFirstName || !shipStreetAddress1 || !shipPhone)) {
+      showToast("Please fill in the shipping name, street address, and phone number!");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const orderPayload = {
+      const orderPayload: CreateOrderPayload = {
         customer_name: `${firstName} ${lastName}`.trim(),
+        company_name: companyName || undefined,
         customer_phone: phone,
         customer_email: email || undefined,
-        division: division || "Dhaka",
+        country: country || "Bangladesh",
+        division: division || district || "Dhaka",
         district: district || "Dhaka",
-        thana: thana || "Dhaka Sadar",
+        thana: thana || townCity || "Dhaka Sadar",
         address: streetAddress1 + (streetAddress2 ? `, ${streetAddress2}` : ""),
+        town_city: townCity || undefined,
+        postcode: postcode || undefined,
+        order_notes: orderNotes || undefined,
+        payment_method: "cod",
+        ship_different: shipDifferent,
+        ship_customer_name: shipDifferent ? `${shipFirstName} ${shipLastName}`.trim() : undefined,
+        ship_company_name: shipDifferent ? (shipCompanyName || undefined) : undefined,
+        ship_country: shipDifferent ? (shipCountry || undefined) : undefined,
+        ship_address: shipDifferent ? (streetAddress2 ? `${shipStreetAddress1}, ${shipStreetAddress2}` : shipStreetAddress1) : undefined,
+        ship_town_city: shipDifferent ? (shipTownCity || undefined) : undefined,
+        ship_postcode: shipDifferent ? (shipPostcode || undefined) : undefined,
+        ship_district: shipDifferent ? (shipDistrict || undefined) : undefined,
+        ship_phone: shipDifferent ? (shipPhone || undefined) : undefined,
         shipping_amount: finalShippingFee,
+        user_id: user?.id ? Number(user.id) : undefined,
         items: cart.map((item) => ({
           product_id: Number(item.id) || 1,
           quantity: Number(item.quantity) || 1,
+          attributes: (item as any).attributes || undefined,
         })),
       };
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("shopia_token") : null;
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      };
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
+      const res = await placeOrder(orderPayload);
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/v1/orders`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(orderPayload),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && (data.success || data.id || data.order_number)) {
-        const orderNum = data.data?.order_number || data.data?.id || "SHP-CONFIRMED";
+      if (res && (res.success || res.data)) {
+        const orderData = res.data || {};
+        const orderNum = orderData.order_number || orderData.id || "CONFIRMED";
         showToast(`Order #${orderNum} placed successfully!`);
         clearCart();
         router.push(`/track-order?order=${orderNum}`);
       } else {
-        // Even if server returns error or demo fallback
-        showToast(data.message || "Order placed successfully! Thank you for ordering.");
-        clearCart();
-        router.push("/dashboard?tab=orders");
+        showToast(res?.message || "Failed to place order. Please try again.");
       }
-    } catch {
-      showToast("Order placed successfully! Thank you for ordering from Shopia BD.");
-      clearCart();
-      router.push("/dashboard?tab=orders");
+    } catch (err: any) {
+      const errorMsg = err?.message || "Error placing order. Please check your connection and try again.";
+      showToast(errorMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -519,93 +512,32 @@ export default function CheckoutPage() {
                   </span>
                 </div>
 
-                {/* Payment Options Radio List */}
-                <div className="space-y-3 pt-3 border-t border-slate-200">
-                  
-                  {/* Direct bank transfer */}
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-800">
-                      <input
-                        type="radio"
-                        name="payment_method"
-                        checked={paymentMethod === "bank"}
-                        onChange={() => setPaymentMethod("bank")}
-                        className="text-[#0b3b82] focus:ring-[#0b3b82]"
-                      />
-                      <span>Direct bank transfer</span>
-                    </label>
-
-                    {paymentMethod === "bank" && (
-                      <div className="p-3 bg-slate-100 rounded-md text-[11px] text-slate-600 leading-relaxed border-l-2 border-[#0b3b82] animate-in fade-in duration-200">
-                        Make your payment directly into our bank account. Please use your Order ID as the payment reference. Your order will not be shipped until the funds have cleared in our account.
-                      </div>
-                    )}
+                {/* Payment Option: Cash on delivery */}
+                <div className="space-y-2 pt-3 border-t border-slate-200">
+                  <div className="flex items-center gap-2.5 font-bold text-slate-800">
+                    <span className="w-3.5 h-3.5 rounded-full border-4 border-[#0b3b82] bg-white inline-block"></span>
+                    <span>Cash on delivery</span>
                   </div>
 
-                  {/* bKash */}
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-800">
-                      <input
-                        type="radio"
-                        name="payment_method"
-                        checked={paymentMethod === "bkash"}
-                        onChange={() => setPaymentMethod("bkash")}
-                        className="text-[#0b3b82] focus:ring-[#0b3b82]"
-                      />
-                      <span>bKash</span>
-                    </label>
-
-                    {paymentMethod === "bkash" && (
-                      <div className="p-3 bg-rose-50 rounded-md text-[11px] text-slate-700 space-y-2 border-l-2 border-rose-600 animate-in fade-in duration-200">
-                        <p className="font-bold text-rose-800">bKash Merchant Number: <span className="font-mono">01681-135030</span></p>
-                        <div className="space-y-1.5">
-                          <input
-                            type="tel"
-                            placeholder="bKash Sender Phone Number"
-                            value={bkashNumber}
-                            onChange={(e) => setBkashNumber(e.target.value)}
-                            className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-800"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Transaction ID (TrxID)"
-                            value={trxId}
-                            onChange={(e) => setTrxId(e.target.value)}
-                            className="w-full bg-white border border-slate-300 rounded px-2.5 py-1.5 text-xs font-mono uppercase text-slate-800"
-                          />
-                        </div>
-                      </div>
-                    )}
+                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-600 leading-relaxed border-l-4 border-l-[#0b3b82]">
+                    Pay with cash upon delivery to your doorstep anywhere in Bangladesh.
                   </div>
-
-                  {/* Cash on delivery */}
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-800">
-                      <input
-                        type="radio"
-                        name="payment_method"
-                        checked={paymentMethod === "cod"}
-                        onChange={() => setPaymentMethod("cod")}
-                        className="text-[#0b3b82] focus:ring-[#0b3b82]"
-                      />
-                      <span>Cash on delivery</span>
-                    </label>
-
-                    {paymentMethod === "cod" && (
-                      <div className="p-3 bg-slate-100 rounded-md text-[11px] text-slate-600 leading-relaxed border-l-2 border-[#ff8c00] animate-in fade-in duration-200">
-                        Pay cash to delivery rider after receiving your package.
-                      </div>
-                    )}
-                  </div>
-
                 </div>
 
-                {/* Place order Button with #0B3B82 theme */}
+                {/* Place order Button */}
                 <button
                   type="submit"
-                  className="w-full bg-[#0b3b82] hover:bg-[#b30047] text-white font-extrabold text-sm py-3.5 px-6 rounded-full shadow-md transition duration-200 cursor-pointer text-center block mt-4"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#0b3b82] hover:bg-[#b30047] disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-extrabold text-sm py-3.5 px-6 rounded-full shadow-md transition duration-200 cursor-pointer text-center flex items-center justify-center gap-2 mt-4"
                 >
-                  Place order
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Placing order...</span>
+                    </>
+                  ) : (
+                    <span>Place order</span>
+                  )}
                 </button>
 
               </div>

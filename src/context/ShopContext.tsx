@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState } from "react";
 
 export interface UserProfile {
+  id?: number | string;
   name: string;
   email: string;
   phone: string;
