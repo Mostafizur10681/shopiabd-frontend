@@ -91,7 +91,7 @@ export function Footer() {
             <h3 className="font-bold text-white text-sm">Account</h3>
             <ul className="space-y-2 text-xs text-blue-100/80">
               <li><Link href="/account" className="hover:text-amber-300 transition">My account</Link></li>
-              <li><Link href="/orders" className="hover:text-amber-300 transition">My orders</Link></li>
+              <li><Link href="/dashboard?tab=orders" className="hover:text-amber-300 transition">My orders</Link></li>
               <li><Link href="/returns" className="hover:text-amber-300 transition">Returns</Link></li>
               <li><Link href="/shipping" className="hover:text-amber-300 transition">Shipping</Link></li>
               <li><Link href="/wishlist" className="hover:text-amber-300 transition">Wishlist</Link></li>

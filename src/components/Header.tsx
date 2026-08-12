@@ -212,9 +212,21 @@ export function Header() {
           {/* User Icon / Profile Badge */}
           <Link href="/account" className="text-slate-700 hover:text-[#b30047] transition flex items-center gap-1.5" title={user ? `Logged in as ${user.name}` : "Sign In / Register"}>
             {user ? (
-              <span className="w-7 h-7 rounded-full bg-[#0b3b82] text-white font-bold text-xs flex items-center justify-center border border-slate-200">
-                {user.name.charAt(0).toUpperCase()}
-              </span>
+              user.avatar ? (
+                <span className="relative w-8 h-8 rounded-full overflow-hidden border border-slate-300 flex items-center justify-center shadow-xs bg-slate-100">
+                  <Image
+                    src={user.avatar}
+                    alt={user.name || "Profile"}
+                    fill
+                    sizes="32px"
+                    className="object-cover"
+                  />
+                </span>
+              ) : (
+                <span className="w-8 h-8 rounded-full bg-[#0b3b82] text-white font-bold text-xs flex items-center justify-center border border-slate-200 shadow-xs">
+                  {(user.name || "U").charAt(0).toUpperCase()}
+                </span>
+              )
             ) : (
               <User className="w-6 h-6 stroke-[1.8]" />
             )}

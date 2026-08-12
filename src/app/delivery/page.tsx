@@ -8,7 +8,6 @@ import { Truck, ShieldCheck, Clock, CreditCard, CheckCircle2, ArrowRight, Sparkl
 export default function DeliveryInformationPage() {
   const deliveryRates = [
     { location: "Inside Dhaka City", time: "24 - 48 Hours", rate: "৳ 60.00" },
-    { location: "Dhaka Suburbs (Savars, Gazipur, Narayanganj)", time: "48 - 72 Hours", rate: "৳ 100.00" },
     { location: "Outside Dhaka (All 64 Districts)", time: "3 - 5 Working Days", rate: "৳ 120.00" },
   ];
 

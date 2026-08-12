@@ -27,14 +27,6 @@ export default function ShippingPage() {
       freeOver: "Free on ৳3,000+"
     },
     {
-      zone: "Dhaka Suburbs (Gazipur, Savar, Narayanganj)",
-      fee: "৳100",
-      time: "48 – 72 Hours",
-      partner: "Steadfast Express Logistics",
-      badge: "Home Delivery",
-      freeOver: "Free on ৳3,000+"
-    },
-    {
       zone: "Outside Dhaka (All 64 Districts)",
       fee: "৳120",
       time: "2 – 4 Business Days",

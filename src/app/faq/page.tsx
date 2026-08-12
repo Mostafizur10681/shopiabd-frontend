@@ -53,7 +53,7 @@ export default function FAQPage() {
     {
       category: "Orders & Shipping",
       q: "What are your delivery charges and timelines?",
-      a: "Inside Dhaka City delivery is ৳60 (24–48 hrs), Dhaka Suburbs is ৳100 (48–72 hrs), and Outside Dhaka (All 64 Districts) is ৳120 (2–4 days). Free shipping applies on orders over ৳3,000!"
+      a: "Inside Dhaka City delivery is ৳60 (24–48 hrs) and Outside Dhaka (All 64 Districts) is ৳120 (2–4 days). Free shipping applies on orders over ৳3,000!"
     },
     {
       category: "Orders & Shipping",

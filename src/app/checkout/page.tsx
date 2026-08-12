@@ -95,12 +95,18 @@ export default function CheckoutPage() {
         })),
       };
 
+      const token = typeof window !== "undefined" ? localStorage.getItem("shopia_token") : null;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/v1/orders`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-        },
+        headers,
         body: JSON.stringify(orderPayload),
       });
 
@@ -115,12 +121,12 @@ export default function CheckoutPage() {
         // Even if server returns error or demo fallback
         showToast(data.message || "Order placed successfully! Thank you for ordering.");
         clearCart();
-        router.push("/orders");
+        router.push("/dashboard?tab=orders");
       }
     } catch {
       showToast("Order placed successfully! Thank you for ordering from Shopia BD.");
       clearCart();
-      router.push("/orders");
+      router.push("/dashboard?tab=orders");
     } finally {
       setIsSubmitting(false);
     }

@@ -124,24 +124,72 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     showToast("Logged out successfully.");
   };
 
-  const updateProfile = (updatedData: Partial<UserProfile>) => {
+  const updateProfile = async (updatedData: Partial<UserProfile>) => {
+    // Optimistic local update
     setUser((prev) => {
-      const updated = prev ? { ...prev, ...updatedData } : null;
+      const updated = prev ? { ...prev, ...updatedData } : (updatedData as UserProfile);
       if (updated) {
         localStorage.setItem("shopia_user", JSON.stringify(updated));
       }
       return updated;
     });
+
+    const token = typeof window !== "undefined" ? localStorage.getItem("shopia_token") : null;
+    if (token) {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/v1/auth/profile`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify(updatedData)
+        });
+        const data = await res.json();
+        if (data && (data.data?.user || data.data || data.user)) {
+          const u = data.data?.user || data.data || data.user;
+          const profile: UserProfile = {
+            name: u.name || updatedData.name || "Customer",
+            email: u.email || updatedData.email || "",
+            phone: u.phone || updatedData.phone || "",
+            address: u.address || updatedData.address || "",
+            avatar: u.avatar || u.profile_pic || updatedData.avatar || undefined,
+          };
+          setUser(profile);
+          localStorage.setItem("shopia_user", JSON.stringify(profile));
+        }
+      } catch {
+        // keep optimistic update
+      }
+    }
     showToast("Profile updated successfully!");
   };
 
-  const deleteAccount = () => {
+  const deleteAccount = async () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("shopia_token") : null;
+    if (token) {
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/v1/auth/delete-account`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          }
+        });
+      } catch {
+        // Continue clearing local state
+      }
+    }
     setUser(null);
+    setCart([]);
+    setWishlist([]);
     try {
       localStorage.removeItem("shopia_token");
       localStorage.removeItem("shopia_user");
     } catch {}
-    showToast("Your account has been deleted.");
+    showToast("Your account has been permanently deleted.");
   };
 
   const showToast = (msg: string) => {

@@ -136,7 +136,16 @@ export async function fetchFromApi<T>(endpoint: string, options?: RequestInit): 
     let errMessage = `HTTP error ${res.status}`;
     try {
       const errData = await res.json();
-      if (errData.message) errMessage = errData.message;
+      if (errData.errors && typeof errData.errors === "object") {
+        const firstKey = Object.keys(errData.errors)[0];
+        if (firstKey && Array.isArray(errData.errors[firstKey]) && errData.errors[firstKey][0]) {
+          errMessage = errData.errors[firstKey][0];
+        } else if (errData.message) {
+          errMessage = errData.message;
+        }
+      } else if (errData.message) {
+        errMessage = errData.message;
+      }
     } catch {
       // ignore
     }
@@ -208,12 +217,23 @@ export async function getAboutPage() {
   return fetchFromApi<{ success: boolean; data: any }>("/about");
 }
 
+export async function updateAboutPage(payload: any) {
+  return fetchFromApi<{ success: boolean; message: string; data: any }>("/about", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 // ── Orders ──
 export async function createOrder(payload: CreateOrderPayload) {
   return fetchFromApi<{ success: boolean; message: string; data: any }>("/orders", {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function getUserOrders(page: number = 1, perPage: number = 20) {
+  return fetchFromApi<{ success: boolean; data: any; message?: string }>(`/orders?page=${page}&per_page=${perPage}`);
 }
 
 export async function trackOrder(orderNumber: string) {
@@ -259,6 +279,37 @@ export async function registerCustomer(data: { name: string; email?: string; pho
 
 export async function getAuthProfile() {
   return fetchFromApi<{ success: boolean; data: any }>("/auth/profile");
+}
+
+export async function updateAuthProfile(payload: {
+  name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  avatar?: string;
+  profile_pic?: string;
+}) {
+  return fetchFromApi<{ success: boolean; message: string; data: any }>("/auth/profile", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function changeAuthPassword(payload: {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+}) {
+  return fetchFromApi<{ success: boolean; message: string }>("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAuthAccount() {
+  return fetchFromApi<{ success: boolean; message: string }>("/auth/delete-account", {
+    method: "POST",
+  });
 }
 
 export async function logoutCustomer() {
