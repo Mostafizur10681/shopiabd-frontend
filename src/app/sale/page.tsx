@@ -9,12 +9,75 @@ import productsData from "@/data/products.json";
 
 export default function SalePage() {
   const { addToCart, addToWishlist, isInWishlist, setQuickViewProduct } = useShop();
+  const [products, setProducts] = useState<any[]>([]);
   const [sortBy, setSortBy] = useState("discount-high");
 
-  // Sale Products
-  const saleProducts = productsData.filter((p: any) => p.isSale || p.discountPercentage);
+  React.useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/v1/products?per_page=100`)
+      .then((res) => res.json())
+      .then((data) => {
+        const list: any[] = data?.data?.data || data?.data || [];
+        if (Array.isArray(list) && list.length > 0) {
+          const mapped = list
+            .map((p: any) => {
+              const rawPrice = parseFloat(String(p.price || 0)) || 0;
+              const rawSale = p.sale_price !== null && p.sale_price !== undefined ? parseFloat(String(p.sale_price)) : null;
+              const hasDiscount = rawSale !== null && rawSale > 0 && rawSale < rawPrice;
+              
+              let originalPrice: number | undefined = undefined;
+              let activePrice = rawPrice;
 
-  const sortedProducts = [...saleProducts].sort((a, b) => {
+              if (hasDiscount) {
+                activePrice = rawSale!;
+                originalPrice = rawPrice;
+              } else if (p.originalPrice && parseFloat(String(p.originalPrice)) > rawPrice) {
+                originalPrice = parseFloat(String(p.originalPrice));
+              } else if (p.original_price && parseFloat(String(p.original_price)) > rawPrice) {
+                originalPrice = parseFloat(String(p.original_price));
+              }
+
+              const discountPercentage = originalPrice && originalPrice > activePrice
+                ? Math.round(((originalPrice - activePrice) / originalPrice) * 100)
+                : (p.discount ? parseFloat(String(p.discount)) : undefined);
+
+              const mainImage =
+                p.image ||
+                p.main_image ||
+                p.mainImage ||
+                (Array.isArray(p.images) && p.images[0]) ||
+                "https://placehold.co/400x400";
+
+              return {
+                id: p.id,
+                name: p.name || "Product",
+                slug: p.slug || String(p.id),
+                category: typeof p.category === "string" ? p.category : (p.category?.name || "General"),
+                price: activePrice,
+                originalPrice,
+                discountPercentage,
+                mainImage,
+                rating: p.rating ? parseFloat(String(p.rating)) : 4.9,
+                reviewsCount: p.reviews_count || p.reviewsCount || 18,
+                isBestSeller: Boolean(p.best_seller || p.isBestSeller),
+              };
+            })
+            .filter((p: any) => (p.originalPrice && p.originalPrice > p.price) || (p.discountPercentage && p.discountPercentage > 0));
+
+          if (mapped.length > 0) {
+            setProducts(mapped);
+          } else {
+            setProducts(productsData.filter((p: any) => p.isSale || p.discountPercentage || (p.originalPrice && p.originalPrice > p.price)));
+          }
+        } else {
+          setProducts(productsData.filter((p: any) => p.isSale || p.discountPercentage || (p.originalPrice && p.originalPrice > p.price)));
+        }
+      })
+      .catch(() => {
+        setProducts(productsData.filter((p: any) => p.isSale || p.discountPercentage || (p.originalPrice && p.originalPrice > p.price)));
+      });
+  }, []);
+
+  const sortedProducts = [...products].sort((a, b) => {
     if (sortBy === "discount-high") {
       const discA = a.discountPercentage || 20;
       const discB = b.discountPercentage || 20;

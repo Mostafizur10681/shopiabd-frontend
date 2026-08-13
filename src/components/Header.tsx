@@ -106,9 +106,9 @@ export function Header() {
 
   const searchResults = searchQuery.trim()
     ? allProducts.filter((p) =>
-        (p.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.category || "").toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      (p.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.category || "").toLowerCase().includes(searchQuery.toLowerCase())
+    )
     : [];
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
@@ -136,7 +136,7 @@ export function Header() {
 
       {/* 2. Main Middle Bar */}
       <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4 flex items-center justify-between gap-3 sm:gap-6">
-        
+
         {/* Left: Mobile Hamburger Toggle + Brand Logo */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Mobile Hamburger Drawer Trigger */}
@@ -220,11 +220,11 @@ export function Header() {
                     </Link>
                   ))}
 
-                  <div 
+                  <div
                     onClick={() => {
                       handleSearchSubmit();
                       setSearchQuery("");
-                    }} 
+                    }}
                     className="p-3 bg-slate-50 hover:bg-slate-100 text-center text-xs font-bold text-[#0b3b82] cursor-pointer border-t border-slate-100 flex items-center justify-center gap-1 transition"
                   >
                     <span>View all {searchResults.length} results for &quot;{searchQuery}&quot;</span>
@@ -238,7 +238,7 @@ export function Header() {
 
         {/* Right User Actions */}
         <div className="flex items-center gap-4 sm:gap-6">
-          
+
           {/* Order Tracking Icon */}
           <Link href="/track-order" className="text-slate-700 hover:text-[#0b3b82] transition flex items-center gap-1 text-xs font-bold" title="Track Your Order">
             <Truck className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.8] text-[#0b3b82]" />
@@ -444,10 +444,10 @@ export function Header() {
                     className="p-2.5 flex items-center gap-3 hover:bg-slate-50 cursor-pointer block"
                   >
                     <div className="w-9 h-9 relative shrink-0 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 p-0.5">
-                      <img 
-                        src={prod.mainImage} 
-                        alt={prod.name} 
-                        className="w-full h-full object-contain" 
+                      <img
+                        src={prod.mainImage}
+                        alt={prod.name}
+                        className="w-full h-full object-contain"
                         onError={(e) => { (e.target as HTMLImageElement).src = "/hero_honey.png"; }}
                       />
                     </div>
@@ -459,11 +459,11 @@ export function Header() {
                   </Link>
                 ))}
 
-                <div 
+                <div
                   onClick={() => {
                     handleSearchSubmit();
                     setSearchQuery("");
-                  }} 
+                  }}
                   className="p-2.5 bg-slate-50 hover:bg-slate-100 text-center text-xs font-bold text-[#0b3b82] cursor-pointer border-t border-slate-100 flex items-center justify-center gap-1"
                 >
                   <span>View all {searchResults.length} results</span>
@@ -522,14 +522,14 @@ export function Header() {
       {/* 4. Mobile Side Navigation Drawer (Toggled by Hamburger button) */}
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          <div 
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity" 
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
           />
 
           <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col justify-between z-10 animate-in slide-in-from-left duration-300">
             <div className="p-5 space-y-6 overflow-y-auto">
-              
+
               {/* Drawer Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <span className="text-2xl font-black italic text-[#b30047]">
@@ -600,7 +600,7 @@ export function Header() {
             {/* Mobile Drawer Footer Hotline */}
             <div className="p-5 bg-slate-50 border-t border-slate-100 space-y-2">
               <p className="text-xs text-slate-400 font-bold">Order Hotline Support</p>
-              <a 
+              <a
                 href="tel:01681135030"
                 className="bg-[#0b3b82] text-white font-bold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xs"
               >

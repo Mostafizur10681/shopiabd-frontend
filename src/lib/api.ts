@@ -173,7 +173,7 @@ export async function placeOrder(payload: CreateOrderPayload) {
 
 export async function fetchFromApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = endpoint.startsWith("http") ? endpoint : `${API_V1}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
-  
+
   // Attach Sanctum token if available in localStorage
   let headers: Record<string, string> = {
     "Accept": "application/json",
@@ -385,4 +385,37 @@ export async function logoutCustomer() {
   return fetchFromApi<{ success: boolean; message: string }>("/auth/logout", {
     method: "POST",
   });
+}
+
+export interface ApiContactSettings {
+  id?: string | number;
+  badge_text?: string;
+  hero_title?: string;
+  hero_subtitle?: string;
+  phone?: string;
+  secondary_phone?: string;
+  email?: string;
+  secondary_email?: string;
+  whatsapp_number?: string;
+  address?: string;
+  business_hours_weekday?: string;
+  business_hours_weekend?: string;
+  response_time_note?: string;
+  map_title?: string;
+  map_subtitle?: string;
+  map_url?: string;
+  location_directions?: string;
+  form_title?: string;
+  form_subtitle?: string;
+  form_topics?: string[];
+  emergency_notice?: string;
+  features?: { icon?: string; title?: string; desc?: string }[];
+  support_title?: string;
+  support_desc?: string;
+  support_phone?: string;
+  support_image?: string;
+}
+
+export async function getContactSettings() {
+  return fetchFromApi<{ success: boolean; data: ApiContactSettings }>("/contact-settings");
 }

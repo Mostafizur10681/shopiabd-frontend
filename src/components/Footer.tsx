@@ -82,13 +82,13 @@ export function Footer() {
   return (
     <footer className="bg-[#0b3b82] text-blue-100 font-sans border-t border-[#092e66] pt-10 sm:pt-12 pb-8 text-xs sm:text-sm selection:bg-amber-400 selection:text-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Main Grid: Responsive 1-col (Mobile) -> 12-col Grid (Tablet & Desktop) */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-8 pb-10 border-b border-blue-900/60">
-          
+
           {/* Col 1: Brand Logo, Address & Socials (Mobile: full, Tablet: 6 cols, Desktop: 3 cols) */}
           <div className="md:col-span-6 lg:col-span-3 space-y-4 pr-0 md:pr-4">
-            
+
             {/* Logo: Image if uploaded, otherwise stylized SHOPIA brand */}
             <Link href="/" className="inline-block transition-opacity hover:opacity-90">
               {footer.logo_image ? (

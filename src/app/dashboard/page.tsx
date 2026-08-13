@@ -6,19 +6,19 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useShop } from "@/context/ShopContext";
 import { getUserOrders, changeAuthPassword } from "@/lib/api";
-import { 
-  User, 
-  Package, 
-  Truck, 
-  Edit3, 
-  Trash2, 
-  LogOut, 
-  CheckCircle2, 
-  Clock, 
-  MapPin, 
-  Phone, 
-  Mail, 
-  Save, 
+import {
+  User,
+  Package,
+  Truck,
+  Edit3,
+  Trash2,
+  LogOut,
+  CheckCircle2,
+  Clock,
+  MapPin,
+  Phone,
+  Mail,
+  Save,
   AlertTriangle,
   Lock,
   Camera,
@@ -111,7 +111,7 @@ function DashboardContent() {
     setIsLoadingOrders(true);
     try {
       const res = await getUserOrders(1, 50);
-      
+
       let rawList: any[] = [];
       if (res && res.data) {
         if (Array.isArray(res.data)) {
@@ -313,7 +313,7 @@ function DashboardContent() {
   return (
     <div className="bg-slate-50 min-h-screen font-sans py-10 pb-20">
       <div className="max-w-7xl mx-auto px-4 space-y-8">
-        
+
         {/* Top Header Banner */}
         <div className="bg-gradient-to-r from-[#0b3b82] via-[#092a5e] to-[#b30047] rounded-3xl p-6 sm:p-10 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -354,17 +354,16 @@ function DashboardContent() {
 
         {/* Dashboard 2-Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* Left Navigation Sidebar (Col 3) */}
           <div className="lg:col-span-3 bg-white rounded-3xl border border-slate-200/80 p-4 shadow-sm space-y-1">
             <button
               type="button"
               onClick={() => setActiveTab("overview")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
-                activeTab === "overview"
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${activeTab === "overview"
                   ? "bg-[#0b3b82] text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              }`}
+                }`}
             >
               <User className="w-4 h-4" /> Dashboard Overview
             </button>
@@ -373,18 +372,16 @@ function DashboardContent() {
             <button
               type="button"
               onClick={() => setActiveTab("orders")}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
-                activeTab === "orders"
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all ${activeTab === "orders"
                   ? "bg-[#0b3b82] text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
                 <Package className="w-4 h-4" /> My Orders
               </div>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-extrabold ${
-                activeTab === "orders" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"
-              }`}>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-extrabold ${activeTab === "orders" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-700"
+                }`}>
                 {orders.length}
               </span>
             </button>
@@ -392,18 +389,16 @@ function DashboardContent() {
             <button
               type="button"
               onClick={() => setActiveTab("wishlist")}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
-                activeTab === "wishlist"
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-xs font-bold transition-all ${activeTab === "wishlist"
                   ? "bg-[#0b3b82] text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3">
                 <Heart className="w-4 h-4 text-rose-500" /> Saved Wishlist
               </div>
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-extrabold ${
-                activeTab === "wishlist" ? "bg-white/20 text-white" : "bg-rose-50 text-rose-600"
-              }`}>
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-extrabold ${activeTab === "wishlist" ? "bg-white/20 text-white" : "bg-rose-50 text-rose-600"
+                }`}>
                 {wishlist.length}
               </span>
             </button>
@@ -411,11 +406,10 @@ function DashboardContent() {
             <button
               type="button"
               onClick={() => setActiveTab("profile")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
-                activeTab === "profile"
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${activeTab === "profile"
                   ? "bg-[#0b3b82] text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              }`}
+                }`}
             >
               <Edit3 className="w-4 h-4" /> Update Profile
             </button>
@@ -423,11 +417,10 @@ function DashboardContent() {
             <button
               type="button"
               onClick={() => setActiveTab("password")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
-                activeTab === "password"
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${activeTab === "password"
                   ? "bg-[#0b3b82] text-white shadow-sm"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              }`}
+                }`}
             >
               <Lock className="w-4 h-4" /> Change Password
             </button>
@@ -435,11 +428,10 @@ function DashboardContent() {
             <button
               type="button"
               onClick={() => setActiveTab("delete")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${
-                activeTab === "delete"
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-bold transition-all ${activeTab === "delete"
                   ? "bg-rose-600 text-white shadow-sm"
                   : "text-rose-600 hover:bg-rose-50"
-              }`}
+                }`}
             >
               <Trash2 className="w-4 h-4" /> Delete Account
             </button>
@@ -447,7 +439,7 @@ function DashboardContent() {
 
           {/* Right Tab Content Container (Col 9) */}
           <div className="lg:col-span-9 bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm">
-            
+
             {/* 1. OVERVIEW TAB */}
             {activeTab === "overview" && (
               <div className="space-y-6">
@@ -517,12 +509,11 @@ function DashboardContent() {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-xs text-slate-900">Order #{ord.orderNumber}</span>
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                                ord.status === "Delivered" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                                ord.status === "In Transit" ? "bg-amber-50 text-amber-700 border-amber-200" :
-                                ord.status === "Cancelled" ? "bg-rose-50 text-rose-700 border-rose-200" :
-                                "bg-blue-50 text-blue-700 border-blue-200"
-                              }`}>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${ord.status === "Delivered" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                                  ord.status === "In Transit" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                                    ord.status === "Cancelled" ? "bg-rose-50 text-rose-700 border-rose-200" :
+                                      "bg-blue-50 text-blue-700 border-blue-200"
+                                }`}>
                                 {ord.status}
                               </span>
                             </div>
@@ -549,7 +540,7 @@ function DashboardContent() {
             {/* 2. DYNAMIC ORDER LIST TAB */}
             {activeTab === "orders" && (
               <div className="space-y-6">
-                
+
                 {/* Header Row */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
                   <div>
@@ -558,7 +549,7 @@ function DashboardContent() {
                     </h2>
                     <p className="text-xs text-slate-500">Live dynamic order history linked to your customer account</p>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -606,8 +597,8 @@ function DashboardContent() {
                   /* Dynamic Orders List */
                   <div className="space-y-6">
                     {orders.map((ord) => (
-                      <div 
-                        key={ord.id} 
+                      <div
+                        key={ord.id}
                         className="bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-6 shadow-xs space-y-5 hover:border-[#0b3b82]/40 transition duration-200"
                       >
                         {/* Order Header Row */}
@@ -617,15 +608,14 @@ function DashboardContent() {
                               <span className="font-black text-slate-900 text-sm sm:text-base">
                                 Order #{ord.orderNumber}
                               </span>
-                              <span className={`text-[11px] font-extrabold px-3 py-0.5 rounded-full border ${
-                                ord.status === "Delivered"
+                              <span className={`text-[11px] font-extrabold px-3 py-0.5 rounded-full border ${ord.status === "Delivered"
                                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                   : ord.status === "In Transit"
-                                  ? "bg-amber-50 text-amber-700 border-amber-200"
-                                  : ord.status === "Cancelled"
-                                  ? "bg-rose-50 text-rose-700 border-rose-200"
-                                  : "bg-blue-50 text-blue-700 border-blue-200"
-                              }`}>
+                                    ? "bg-amber-50 text-amber-700 border-amber-200"
+                                    : ord.status === "Cancelled"
+                                      ? "bg-rose-50 text-rose-700 border-rose-200"
+                                      : "bg-blue-50 text-blue-700 border-blue-200"
+                                }`}>
                                 {ord.status}
                               </span>
                             </div>
@@ -684,7 +674,7 @@ function DashboardContent() {
                             <span className="text-[10px] font-bold text-slate-400 uppercase block">Payment Status</span>
                             <p className="font-semibold text-slate-800">{ord.paymentMethod} ({ord.paymentStatus})</p>
                           </div>
-                          
+
                           <div className="text-slate-500 space-y-0.5">
                             <span className="text-[10px] font-bold text-slate-400 uppercase block">Shipping Address</span>
                             <p className="font-semibold text-slate-800 truncate" title={ord.shippingAddress}>
@@ -818,7 +808,7 @@ function DashboardContent() {
                 )}
 
                 <form onSubmit={handleProfileSave} className="space-y-5 w-full">
-                  
+
                   {/* Profile Image Uploader */}
                   <div className="flex items-center gap-5 p-4 bg-slate-50 border border-slate-200/80 rounded-2xl">
                     <div className="relative w-20 h-20 rounded-full bg-[#0b3b82] text-white flex items-center justify-center font-black text-2xl border-2 border-slate-200 shadow-sm overflow-hidden shrink-0">
@@ -837,7 +827,7 @@ function DashboardContent() {
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold text-slate-800 block">Profile Picture</label>
                       <p className="text-[11px] text-slate-500">PNG, JPG, or WEBP up to 5MB</p>
-                      
+
                       <label className="inline-flex items-center gap-1.5 bg-[#0b3b82] hover:bg-[#072450] text-white text-xs font-bold px-4 py-2 rounded-xl cursor-pointer shadow-xs transition">
                         <Camera className="w-3.5 h-3.5" /> Upload New Photo
                         <input
@@ -1015,7 +1005,7 @@ function DashboardContent() {
                       <li>You will need to register a new account if you wish to shop again.</li>
                     </ul>
                   </div>
-                  
+
                   <div className="pt-2 border-t border-rose-200/60">
                     <button
                       type="button"
