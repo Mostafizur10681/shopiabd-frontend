@@ -1,70 +1,131 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, Heart, Eye, ShoppingBag } from "lucide-react";
 import { useShop } from "@/context/ShopContext";
 
-export function OrganicFoodSection() {
-  const { addToCart, addToWishlist, isInWishlist, setQuickViewProduct } = useShop();
+const defaultOrganicProducts = [
+  {
+    id: "org-1",
+    name: "Naturya Organic Maca Powder (300 gm)",
+    price: 1890.00,
+    originalPrice: 2600.00,
+    rating: 5,
+    isSale: true,
+    mainImage: "/prod_maca.png"
+  },
+  {
+    id: "org-2",
+    name: "DULAL CHANDRA BHAR TALMISRI (দুলাল চন্দ্র ভড়ের তালমিছরি)",
+    price: 350.00,
+    originalPrice: null,
+    rating: 5,
+    isSale: false,
+    mainImage: "/prod_talmisri.png"
+  },
+  {
+    id: "org-3",
+    name: "Naturya Maca Powder 125 gm",
+    price: 1150.00,
+    originalPrice: 1590.00,
+    rating: 5,
+    isSale: true,
+    mainImage: "/prod_maca.png"
+  },
+  {
+    id: "org-4",
+    name: "Swanson Maca Capsule 500 mg Capsule",
+    price: 1450.00,
+    originalPrice: 1650.00,
+    rating: 5,
+    isSale: true,
+    mainImage: "/prod_maca.png"
+  },
+  {
+    id: "org-5",
+    name: "Mustard Oil (সরিষার তেল)",
+    price: 280.00,
+    originalPrice: null,
+    rating: 5,
+    isSale: false,
+    mainImage: "/prod_blackseed.png"
+  },
+  {
+    id: "org-6",
+    name: "Extra Virgin Organic Coconut Oil (250 ml)",
+    price: 370.00,
+    originalPrice: null,
+    rating: 5,
+    isSale: false,
+    mainImage: "/prod_honey.png"
+  }
+];
 
-  const organicProducts = [
-    {
-      id: "org-1",
-      name: "Naturya Organic Maca Powder (300 gm)",
-      price: 1890.00,
-      originalPrice: 2600.00,
-      rating: 5,
-      isSale: true,
-      mainImage: "/prod_maca.png"
-    },
-    {
-      id: "org-2",
-      name: "DULAL CHANDRA BHAR TALMISRI (দুলাল চন্দ্র ভড়ের তালমিছরি)",
-      price: 350.00,
-      originalPrice: null,
-      rating: 5,
-      isSale: false,
-      mainImage: "/prod_talmisri.png"
-    },
-    {
-      id: "org-3",
-      name: "Naturya Maca Powder 125 gm",
-      price: 1150.00,
-      originalPrice: 1590.00,
-      rating: 5,
-      isSale: true,
-      mainImage: "/prod_maca.png"
-    },
-    {
-      id: "org-4",
-      name: "Swanson Maca Capsule 500 mg Capsule",
-      price: 1450.00,
-      originalPrice: 1650.00,
-      rating: 5,
-      isSale: true,
-      mainImage: "/prod_maca.png"
-    },
-    {
-      id: "org-5",
-      name: "Mustard Oil (সরিষার তেল)",
-      price: 280.00,
-      originalPrice: null,
-      rating: 5,
-      isSale: false,
-      mainImage: "/prod_blackseed.png"
-    },
-    {
-      id: "org-6",
-      name: "Extra Virgin Organic Coconut Oil (250 ml)",
-      price: 370.00,
-      originalPrice: null,
-      rating: 5,
-      isSale: false,
-      mainImage: "/prod_honey.png"
+interface OrganicFoodSectionProps {
+  products?: any[];
+}
+
+export function OrganicFoodSection({ products: initialProducts }: OrganicFoodSectionProps) {
+  const { addToCart, addToWishlist, isInWishlist, setQuickViewProduct } = useShop();
+  const [items, setItems] = useState<any[]>(defaultOrganicProducts);
+
+  useEffect(() => {
+    const processProducts = (rawList: any[]) => {
+      if (!Array.isArray(rawList) || rawList.length === 0) return [];
+
+      const normalized = rawList.map((p: any) => ({
+        id: p.id,
+        name: p.name || "",
+        slug: p.slug || String(p.id),
+        category: typeof p.category === "string" ? p.category : (p.category?.name || "General"),
+        price: typeof p.price === "number" ? p.price : parseFloat(String(p.price || 0)),
+        originalPrice: p.originalPrice ? parseFloat(String(p.originalPrice)) : (p.sale_price && p.price ? parseFloat(String(p.price)) : undefined),
+        mainImage: p.main_image || p.image || p.mainImage || (Array.isArray(p.images) && p.images[0]) || "/prod_chia.png",
+        rating: p.rating ? parseFloat(String(p.rating)) : 5,
+        isSale: Boolean(p.isSale || p.sale_price || p.is_sale),
+      }));
+
+      const keywords = ["organic", "food", "maca", "chia", "honey", "oil", "seed", "powder", "supplement", "nut", "grocery", "talmisri", "mustard"];
+      const filtered = normalized.filter((p) => {
+        const cat = (p.category || "").toLowerCase();
+        const name = (p.name || "").toLowerCase();
+        return keywords.some((kw) => cat.includes(kw) || name.includes(kw));
+      });
+
+      if (filtered.length >= 6) return filtered.slice(0, 6);
+
+      const ids = new Set(filtered.map(f => f.id));
+      const remaining = normalized.filter(p => !ids.has(p.id));
+      return [...filtered, ...remaining].slice(0, 6);
+    };
+
+    if (initialProducts && initialProducts.length > 0) {
+      const processed = processProducts(initialProducts);
+      if (processed.length > 0) {
+        setItems(processed);
+        return;
+      }
     }
-  ];
+
+    const fetchApiProducts = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/v1/products?per_page=50`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const list = json.data?.data || json.data || [];
+        const processed = processProducts(list);
+        if (processed.length > 0) {
+          setItems(processed);
+        }
+      } catch {
+        // Keep default static items
+      }
+    };
+
+    fetchApiProducts();
+  }, [initialProducts]);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8">
@@ -72,7 +133,7 @@ export function OrganicFoodSection() {
         
         {/* Left Side: 6-Product Grid Container (Col 8) */}
         <div className="lg:col-span-8 bg-white grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 order-2 lg:order-1">
-          {organicProducts.map((prod) => (
+          {items.map((prod) => (
             <div 
               key={prod.id} 
               className="p-5 flex flex-col justify-between bg-white hover:shadow-xl transition-all duration-300 relative group/org overflow-hidden"
@@ -87,12 +148,11 @@ export function OrganicFoodSection() {
                   )}
 
                   <Link href={`/product/${(prod as any).slug || prod.id}`} className="relative w-full h-full block">
-                    <Image 
+                    <img 
                       src={prod.mainImage}
                       alt={prod.name}
-                      fill
-                      sizes="(max-width: 768px) 50vw, 20vw"
-                      className="object-contain p-2 group-hover/org:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-contain p-2 group-hover/org:scale-105 transition-transform duration-300"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/prod_chia.png"; }}
                     />
                   </Link>
 
@@ -146,11 +206,11 @@ export function OrganicFoodSection() {
               <div className="space-y-1.5 pt-2 border-t border-slate-50">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[#ff8c00] font-bold text-sm">
-                    ৳{prod.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    ৳{typeof prod.price === "number" ? prod.price.toLocaleString("en-US", { minimumFractionDigits: 2 }) : prod.price}
                   </span>
                   {prod.originalPrice && (
                     <span className="text-slate-400 line-through text-[11px]">
-                      ৳{prod.originalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      ৳{typeof prod.originalPrice === "number" ? prod.originalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 }) : prod.originalPrice}
                     </span>
                   )}
                 </div>

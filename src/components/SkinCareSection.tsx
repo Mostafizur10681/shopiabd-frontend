@@ -1,70 +1,131 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, Heart, Eye, ShoppingBag } from "lucide-react";
 import { useShop } from "@/context/ShopContext";
 
-export function SkinCareSection() {
-  const { addToCart, addToWishlist, isInWishlist, setQuickViewProduct } = useShop();
+const defaultSkinCareProducts = [
+  {
+    id: "sk-1",
+    name: "VWash Plus Expert Intimate Hygiene Wash – 100ml",
+    price: 320.00,
+    originalPrice: 400.00,
+    rating: 5,
+    isSale: true,
+    mainImage: "https://shopiabd.s3.ap-southeast-1.amazonaws.com/products/vwash.png"
+  },
+  {
+    id: "sk-2",
+    name: "CERAVE MOISTURIZING LOTION FOR DRY TO VERY DRY SKIN 236 ML",
+    price: 1450.00,
+    originalPrice: 1800.00,
+    rating: 5,
+    isSale: true,
+    mainImage: "https://shopiabd.s3.ap-southeast-1.amazonaws.com/products/cerave.png"
+  },
+  {
+    id: "sk-3",
+    name: "3W Clinic Green Tea Foam Cleansing 180 ml",
+    price: 550.00,
+    originalPrice: 700.00,
+    rating: 5,
+    isSale: true,
+    mainImage: "https://shopiabd.s3.ap-southeast-1.amazonaws.com/products/greentea.png"
+  },
+  {
+    id: "sk-4",
+    name: "COSRX Salicylic Acid Daily Gentle Cleanser",
+    price: 950.00,
+    originalPrice: 1350.00,
+    rating: 5,
+    isSale: true,
+    mainImage: "https://shopiabd.s3.ap-southeast-1.amazonaws.com/products/cosrx.png"
+  },
+  {
+    id: "sk-5",
+    name: "Vitamin E Soft Capsule (Skin)",
+    price: 280.00,
+    originalPrice: 360.00,
+    rating: 5,
+    isSale: true,
+    mainImage: "/prod_vitamine.png"
+  },
+  {
+    id: "sk-6",
+    name: "Vitamin E soft Cream",
+    price: 380.00,
+    originalPrice: 450.00,
+    rating: 5,
+    isSale: true,
+    mainImage: "/prod_vitamine.png"
+  }
+];
 
-  const skinCareProducts = [
-    {
-      id: "sk-1",
-      name: "VWash Plus Expert Intimate Hygiene Wash – 100ml",
-      price: 320.00,
-      originalPrice: 400.00,
-      rating: 5,
-      isSale: true,
-      mainImage: "https://shopiabd.s3.ap-southeast-1.amazonaws.com/products/vwash.png"
-    },
-    {
-      id: "sk-2",
-      name: "CERAVE MOISTURIZING LOTION FOR DRY TO VERY DRY SKIN 236 ML",
-      price: 1450.00,
-      originalPrice: 1800.00,
-      rating: 5,
-      isSale: true,
-      mainImage: "https://shopiabd.s3.ap-southeast-1.amazonaws.com/products/cerave.png"
-    },
-    {
-      id: "sk-3",
-      name: "3W Clinic Green Tea Foam Cleansing 180 ml",
-      price: 550.00,
-      originalPrice: 700.00,
-      rating: 5,
-      isSale: true,
-      mainImage: "https://shopiabd.s3.ap-southeast-1.amazonaws.com/products/greentea.png"
-    },
-    {
-      id: "sk-4",
-      name: "COSRX Salicylic Acid Daily Gentle Cleanser",
-      price: 950.00,
-      originalPrice: 1350.00,
-      rating: 5,
-      isSale: true,
-      mainImage: "https://shopiabd.s3.ap-southeast-1.amazonaws.com/products/cosrx.png"
-    },
-    {
-      id: "sk-5",
-      name: "Vitamin E Soft Capsule (Skin)",
-      price: 280.00,
-      originalPrice: 360.00,
-      rating: 5,
-      isSale: true,
-      mainImage: "/prod_vitamine.png"
-    },
-    {
-      id: "sk-6",
-      name: "Vitamin E soft Cream",
-      price: 380.00,
-      originalPrice: 450.00,
-      rating: 5,
-      isSale: true,
-      mainImage: "/prod_vitamine.png"
+interface SkinCareSectionProps {
+  products?: any[];
+}
+
+export function SkinCareSection({ products: initialProducts }: SkinCareSectionProps) {
+  const { addToCart, addToWishlist, isInWishlist, setQuickViewProduct } = useShop();
+  const [items, setItems] = useState<any[]>(defaultSkinCareProducts);
+
+  useEffect(() => {
+    const processProducts = (rawList: any[]) => {
+      if (!Array.isArray(rawList) || rawList.length === 0) return [];
+
+      const normalized = rawList.map((p: any) => ({
+        id: p.id,
+        name: p.name || "",
+        slug: p.slug || String(p.id),
+        category: typeof p.category === "string" ? p.category : (p.category?.name || "General"),
+        price: typeof p.price === "number" ? p.price : parseFloat(String(p.price || 0)),
+        originalPrice: p.originalPrice ? parseFloat(String(p.originalPrice)) : (p.sale_price && p.price ? parseFloat(String(p.price)) : undefined),
+        mainImage: p.main_image || p.image || p.mainImage || (Array.isArray(p.images) && p.images[0]) || "/prod_serum.png",
+        rating: p.rating ? parseFloat(String(p.rating)) : 5,
+        isSale: Boolean(p.isSale || p.sale_price || p.is_sale || p.isSale === undefined),
+      }));
+
+      const keywords = ["skin", "care", "skincare", "cleanser", "wash", "lotion", "cream", "serum", "beauty", "face", "moisturiz"];
+      const filtered = normalized.filter((p) => {
+        const cat = (p.category || "").toLowerCase();
+        const name = (p.name || "").toLowerCase();
+        return keywords.some((kw) => cat.includes(kw) || name.includes(kw));
+      });
+
+      if (filtered.length >= 6) return filtered.slice(0, 6);
+
+      const ids = new Set(filtered.map(f => f.id));
+      const remaining = normalized.filter(p => !ids.has(p.id));
+      return [...filtered, ...remaining].slice(0, 6);
+    };
+
+    if (initialProducts && initialProducts.length > 0) {
+      const processed = processProducts(initialProducts);
+      if (processed.length > 0) {
+        setItems(processed);
+        return;
+      }
     }
-  ];
+
+    const fetchApiProducts = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/v1/products?per_page=50`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const list = json.data?.data || json.data || [];
+        const processed = processProducts(list);
+        if (processed.length > 0) {
+          setItems(processed);
+        }
+      } catch {
+        // Keep default static items
+      }
+    };
+
+    fetchApiProducts();
+  }, [initialProducts]);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8">
@@ -101,7 +162,7 @@ export function SkinCareSection() {
 
         {/* Right Side: 6-Product Grid Container (Col 8) */}
         <div className="lg:col-span-8 bg-white grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
-          {skinCareProducts.map((prod) => (
+          {items.map((prod) => (
             <div 
               key={prod.id} 
               className="p-5 flex flex-col justify-between bg-white hover:shadow-xl transition-all duration-300 relative group/skin overflow-hidden"
@@ -116,12 +177,11 @@ export function SkinCareSection() {
                   )}
 
                   <Link href={`/product/${(prod as any).slug || prod.id}`} className="relative w-full h-full block">
-                    <Image 
+                    <img 
                       src={prod.mainImage}
                       alt={prod.name}
-                      fill
-                      sizes="(max-width: 768px) 50vw, 20vw"
-                      className="object-contain p-2 group-hover/skin:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-contain p-2 group-hover/skin:scale-105 transition-transform duration-300"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/prod_serum.png"; }}
                     />
                   </Link>
 
@@ -175,11 +235,11 @@ export function SkinCareSection() {
               <div className="space-y-1.5 pt-2 border-t border-slate-50">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[#ff8c00] font-bold text-sm">
-                    ৳{prod.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    ৳{typeof prod.price === "number" ? prod.price.toLocaleString("en-US", { minimumFractionDigits: 2 }) : prod.price}
                   </span>
                   {prod.originalPrice && (
                     <span className="text-slate-400 line-through text-[11px]">
-                      ৳{prod.originalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                      ৳{typeof prod.originalPrice === "number" ? prod.originalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 }) : prod.originalPrice}
                     </span>
                   )}
                 </div>

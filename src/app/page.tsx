@@ -49,7 +49,7 @@ export default async function Home() {
 
       {/* 4. Skin Care Product Section (Custom Banner Grid) */}
       <section className="w-full">
-        <SkinCareSection />
+        <SkinCareSection products={products} />
       </section>
 
       {/* 5. 100% Secure Delivery Notice Banner */}
@@ -59,7 +59,7 @@ export default async function Home() {
 
       {/* 6. Organic Food Product Section (Right-Side Navy Banner Grid) */}
       <section className="w-full">
-        <OrganicFoodSection />
+        <OrganicFoodSection products={products} />
       </section>
 
       {/* 7. Trust Badges Bar (100% Money back | Non-contact shipping | Fast delivery) */}
