@@ -100,7 +100,7 @@ export function Footer() {
                 />
               ) : (
                 <span className="text-3xl sm:text-4xl font-black italic tracking-tighter text-[#b30047] drop-shadow-sm">
-                  S<span className="text-[#e60000]">HOPIA</span>
+                  M<span className="text-[#e60000]">OSTAFIZ</span>
                 </span>
               )}
             </Link>
