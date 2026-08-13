@@ -153,7 +153,7 @@ export function Header() {
           <Link href="/" className="flex items-center gap-1 group shrink-0">
             <div className="flex items-center">
               <span className="text-2xl sm:text-3xl lg:text-4xl font-black italic tracking-tighter text-[#b30047]">
-                M<span className="text-[#e60000]">OSTAFIZ</span>
+                S<span className="text-[#e60000]">HOPIA</span>
               </span>
             </div>
           </Link>
@@ -533,7 +533,7 @@ export function Header() {
               {/* Drawer Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <span className="text-2xl font-black italic text-[#b30047]">
-                  M<span className="text-[#e60000]">OSTAFIZ</span>
+                  S<span className="text-[#e60000]">HOPIA</span>
                 </span>
                 <button
                   type="button"
