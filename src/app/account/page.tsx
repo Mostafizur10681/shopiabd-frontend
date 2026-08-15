@@ -18,6 +18,7 @@ export default function AccountPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
   // Redirect to dashboard if already logged in
   useEffect(() => {
@@ -29,6 +30,7 @@ export default function AccountPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
@@ -78,6 +80,9 @@ export default function AccountPage() {
           router.push("/dashboard");
           return;
         } else {
+          if (data.errors) {
+            setFieldErrors(data.errors);
+          }
           const errMsg = data.message || (data.errors ? Object.values(data.errors).flat().join(" ") : "Invalid email or password. Please check your credentials.");
           setError(errMsg);
         }
@@ -122,6 +127,9 @@ export default function AccountPage() {
           router.push("/dashboard");
           return;
         } else {
+          if (data.errors) {
+            setFieldErrors(data.errors);
+          }
           const errMsg = data.message || (data.errors ? Object.values(data.errors).flat().join(" ") : "Failed to create account. Please verify your details.");
           setError(errMsg);
         }
@@ -207,6 +215,9 @@ export default function AccountPage() {
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0b3b82]/30"
                 />
               </div>
+              {fieldErrors.name && (
+                <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.name[0]}</p>
+              )}
             </div>
           )}
 
@@ -224,6 +235,9 @@ export default function AccountPage() {
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0b3b82]/30"
               />
             </div>
+            {fieldErrors.email && (
+              <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.email[0]}</p>
+            )}
           </div>
 
           {/* 3. Phone Number (Only on Register) */}
@@ -241,6 +255,9 @@ export default function AccountPage() {
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0b3b82]/30"
                 />
               </div>
+              {fieldErrors.phone && (
+                <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.phone[0]}</p>
+              )}
             </div>
           )}
 
@@ -258,6 +275,9 @@ export default function AccountPage() {
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0b3b82]/30"
               />
             </div>
+            {fieldErrors.password && (
+              <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.password[0]}</p>
+            )}
           </div>
 
           {/* 5. Confirm Password (Only on Register) */}
@@ -275,6 +295,9 @@ export default function AccountPage() {
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0b3b82]/30"
                 />
               </div>
+              {fieldErrors.password_confirmation && (
+                <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.password_confirmation[0]}</p>
+              )}
             </div>
           )}
 

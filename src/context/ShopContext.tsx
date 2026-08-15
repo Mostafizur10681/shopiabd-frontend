@@ -22,7 +22,7 @@ interface ShopContextType {
   addToCart: (product: any, quantity?: number) => void;
   updateQuantity: (productId: number | string, delta: number) => void;
   removeFromCart: (productId: number | string) => void;
-  clearCart: () => void;
+  clearCart: (silent?: boolean) => void;
   addToWishlist: (product: any) => void;
   removeFromWishlist: (productId: number | string) => void;
   isInWishlist: (productId: number | string) => boolean;
@@ -126,43 +126,60 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateProfile = async (updatedData: Partial<UserProfile>) => {
-    // Optimistic local update
-    setUser((prev) => {
-      const updated = prev ? { ...prev, ...updatedData } : (updatedData as UserProfile);
-      if (updated) {
-        localStorage.setItem("shopia_user", JSON.stringify(updated));
-      }
-      return updated;
-    });
-
     const token = typeof window !== "undefined" ? localStorage.getItem("shopia_token") : null;
     if (token) {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/v1/auth/profile`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          body: JSON.stringify(updatedData)
-        });
-        const data = await res.json();
-        if (data && (data.data?.user || data.data || data.user)) {
-          const u = data.data?.user || data.data || data.user;
-          const profile: UserProfile = {
-            name: u.name || updatedData.name || "Customer",
-            email: u.email || updatedData.email || "",
-            phone: u.phone || updatedData.phone || "",
-            address: u.address || updatedData.address || "",
-            avatar: u.avatar || u.profile_pic || updatedData.avatar || undefined,
-          };
-          setUser(profile);
-          localStorage.setItem("shopia_user", JSON.stringify(profile));
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/v1/auth/profile`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(updatedData)
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        let errMessage = `HTTP error ${res.status}`;
+        let validationErrors: Record<string, string[]> | undefined = undefined;
+        if (data.errors && typeof data.errors === "object") {
+          validationErrors = data.errors;
+          const firstKey = Object.keys(data.errors)[0];
+          if (firstKey && Array.isArray(data.errors[firstKey]) && data.errors[firstKey][0]) {
+            errMessage = data.errors[firstKey][0];
+          } else if (data.message) {
+            errMessage = data.message;
+          }
+        } else if (data.message) {
+          errMessage = data.message;
         }
-      } catch {
-        // keep optimistic update
+        const error: any = new Error(errMessage);
+        if (validationErrors) {
+          error.errors = validationErrors;
+        }
+        throw error;
       }
+
+      if (data && (data.data?.user || data.data || data.user)) {
+        const u = data.data?.user || data.data || data.user;
+        const profile: UserProfile = {
+          name: u.name || updatedData.name || "Customer",
+          email: u.email || updatedData.email || "",
+          phone: u.phone || updatedData.phone || "",
+          address: u.address || updatedData.address || "",
+          avatar: u.avatar || u.profile_pic || updatedData.avatar || undefined,
+        };
+        setUser(profile);
+        localStorage.setItem("shopia_user", JSON.stringify(profile));
+      }
+    } else {
+      setUser((prev) => {
+        const updated = prev ? { ...prev, ...updatedData } : (updatedData as UserProfile);
+        if (updated) {
+          localStorage.setItem("shopia_user", JSON.stringify(updated));
+        }
+        return updated;
+      });
     }
     showToast("Profile updated successfully!");
   };
@@ -234,9 +251,11 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     showToast("Item removed from cart!");
   };
 
-  const clearCart = () => {
+  const clearCart = (silent: boolean = false) => {
     setCart([]);
-    showToast("Cart cleared!");
+    if (!silent) {
+      showToast("Cart cleared!");
+    }
   };
 
   const addToWishlist = (product: any) => {

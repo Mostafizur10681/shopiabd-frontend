@@ -22,7 +22,7 @@ import {
   ArrowRight,
   Building
 } from "lucide-react";
-import { getContactSettings, sendContactMessage, ApiContactSettings } from "@/lib/api";
+import { getContactSettings, sendContactMessage, ApiContactSettings, getFaqs } from "@/lib/api";
 
 const iconMap: Record<string, any> = {
   Headphones,
@@ -40,6 +40,7 @@ const iconMap: Record<string, any> = {
 export default function ContactUsPage() {
   const [settings, setSettings] = useState<ApiContactSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [faqs, setFaqs] = useState<any[]>([]);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -54,30 +55,44 @@ export default function ContactUsPage() {
     type: "success" | "error" | null;
     message: string;
   }>({ type: null, message: "" });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
   // FAQ Accordion State
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   useEffect(() => {
-    async function loadSettings() {
+    async function loadData() {
       try {
-        const res = await getContactSettings();
-        if (res?.data) {
-          setSettings(res.data);
-          if (res.data.form_topics && res.data.form_topics.length > 0) {
+        const [settingsRes, faqsRes] = await Promise.allSettled([
+          getContactSettings(),
+          getFaqs()
+        ]);
+
+        if (settingsRes.status === "fulfilled" && settingsRes.value?.data) {
+          const s = settingsRes.value.data;
+          setSettings(s);
+          if (s.form_topics && s.form_topics.length > 0) {
             setFormData(prev => ({
               ...prev,
-              subject: prev.subject || res.data.form_topics![0]
+              subject: prev.subject || s.form_topics![0]
             }));
           }
         }
+
+        if (faqsRes.status === "fulfilled" && faqsRes.value?.success && Array.isArray(faqsRes.value.data)) {
+          const mapped = faqsRes.value.data.map((f: any) => ({
+            q: f.question || f.q,
+            a: f.answer || f.a,
+          }));
+          setFaqs(mapped);
+        }
       } catch (err) {
-        console.error("Error loading contact settings:", err);
+        console.error("Error loading contact page data:", err);
       } finally {
         setLoading(false);
       }
     }
-    loadSettings();
+    loadData();
   }, []);
 
   const handleChange = (
@@ -93,6 +108,7 @@ export default function ContactUsPage() {
     e.preventDefault();
     setIsSubmitting(true);
     setSubmitStatus({ type: null, message: "" });
+    setFieldErrors({});
 
     try {
       if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
@@ -123,6 +139,9 @@ export default function ContactUsPage() {
         throw new Error(res?.message || "Failed to submit message. Please try again.");
       }
     } catch (err: any) {
+      if (err?.errors) {
+        setFieldErrors(err.errors);
+      }
       setSubmitStatus({
         type: "error",
         message: err?.message || "An unexpected error occurred. Please try contacting us via phone or WhatsApp."
@@ -201,7 +220,7 @@ export default function ContactUsPage() {
   // Clean WhatsApp phone number for link
   const cleanWaNumber = whatsappNumber.replace(/[^0-9]/g, "");
 
-  const quickFaqs = [
+  const defaultFaqs = [
     {
       q: "How soon will I receive a reply to my contact form inquiry?",
       a: "Our customer support team typically responds within 15 to 30 minutes during active business hours (9:00 AM - 10:00 PM), and within 12 hours during holidays or overnight."
@@ -220,9 +239,11 @@ export default function ContactUsPage() {
     }
   ];
 
+  const displayFaqs = faqs.length > 0 ? faqs.slice(0, 5) : defaultFaqs;
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      
+
       {/* 1. Emergency Hotline & Response Strip */}
       {emergencyNotice && (
         <div className="bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 text-slate-950 py-2.5 px-4 shadow-sm">
@@ -270,7 +291,7 @@ export default function ContactUsPage() {
       {/* 3. Four Core Communication Cards (Floating Overlap) */}
       <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 z-20">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          
+
           {/* Card 1: Direct Hotline */}
           <div className="bg-white rounded-2xl p-6 shadow-xl shadow-slate-900/5 border border-slate-100 flex flex-col justify-between hover:border-[#0B3B82]/50 hover:shadow-[#0B3B82]/10 transition-all duration-300 group">
             <div className="space-y-3">
@@ -413,7 +434,7 @@ export default function ContactUsPage() {
       {/* 5. Main Split Section: Contact Form + Interactive Map & Experience Info */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          
+
           {/* Left Column (7 Cols): Contact Form */}
           <div className="lg:col-span-7 bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/80 shadow-lg shadow-slate-900/5 space-y-6">
             <div className="space-y-2 border-b border-slate-100 pb-5">
@@ -458,9 +479,12 @@ export default function ContactUsPage() {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    placeholder="e.g. Mostafizur Rahman"
+                    placeholder="Enter Your Name"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B82] focus:ring-2 focus:ring-[#0B3B82]/20 font-medium transition-all"
                   />
+                  {fieldErrors.name && (
+                    <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.name[0]}</p>
+                  )}
                 </div>
 
                 <div>
@@ -473,9 +497,12 @@ export default function ContactUsPage() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    placeholder="e.g. name@domain.com"
+                    placeholder="Enter Email Address"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B82] focus:ring-2 focus:ring-[#0B3B82]/20 font-medium transition-all"
                   />
+                  {fieldErrors.email && (
+                    <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.email[0]}</p>
+                  )}
                 </div>
               </div>
 
@@ -492,6 +519,9 @@ export default function ContactUsPage() {
                     placeholder="e.g. 01800000000"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B82] focus:ring-2 focus:ring-[#0B3B82]/20 font-medium transition-all"
                   />
+                  {fieldErrors.phone && (
+                    <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.phone[0]}</p>
+                  )}
                 </div>
 
                 <div>
@@ -510,6 +540,9 @@ export default function ContactUsPage() {
                       </option>
                     ))}
                   </select>
+                  {fieldErrors.subject && (
+                    <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.subject[0]}</p>
+                  )}
                 </div>
               </div>
 
@@ -526,6 +559,9 @@ export default function ContactUsPage() {
                   placeholder="Please describe your question, order number, or product inquiry in detail..."
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-[#0B3B82] focus:ring-2 focus:ring-[#0B3B82]/20 font-medium transition-all leading-relaxed"
                 ></textarea>
+                {fieldErrors.message && (
+                  <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.message[0]}</p>
+                )}
               </div>
 
               <div className="flex items-center justify-between pt-2">
@@ -546,7 +582,7 @@ export default function ContactUsPage() {
 
           {/* Right Column (5 Cols): Map & Showroom Box */}
           <div className="lg:col-span-5 space-y-6">
-            
+
             {/* Google Map Box */}
             <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-lg shadow-slate-900/5 space-y-4">
               <div className="space-y-1">
@@ -647,7 +683,7 @@ export default function ContactUsPage() {
         </div>
 
         <div className="space-y-3">
-          {quickFaqs.map((faq, idx) => (
+          {displayFaqs.map((faq, idx) => (
             <div
               key={idx}
               className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden transition-all"

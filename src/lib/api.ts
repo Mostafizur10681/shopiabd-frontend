@@ -199,9 +199,11 @@ export async function fetchFromApi<T>(endpoint: string, options?: RequestInit): 
 
   if (!res.ok) {
     let errMessage = `HTTP error ${res.status}`;
+    let validationErrors: Record<string, string[]> | undefined = undefined;
     try {
       const errData = await res.json();
       if (errData.errors && typeof errData.errors === "object") {
+        validationErrors = errData.errors;
         const firstKey = Object.keys(errData.errors)[0];
         if (firstKey && Array.isArray(errData.errors[firstKey]) && errData.errors[firstKey][0]) {
           errMessage = errData.errors[firstKey][0];
@@ -214,7 +216,11 @@ export async function fetchFromApi<T>(endpoint: string, options?: RequestInit): 
     } catch {
       // ignore
     }
-    throw new Error(errMessage);
+    const error: any = new Error(errMessage);
+    if (validationErrors) {
+      error.errors = validationErrors;
+    }
+    throw error;
   }
 
   return res.json();

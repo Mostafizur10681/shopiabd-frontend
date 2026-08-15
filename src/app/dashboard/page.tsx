@@ -92,6 +92,8 @@ function DashboardContent() {
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
+  const [profileFieldErrors, setProfileFieldErrors] = useState<Record<string, string[]>>({});
+  const [passwordFieldErrors, setPasswordFieldErrors] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     if (!user) {
@@ -225,6 +227,7 @@ function DashboardContent() {
     e.preventDefault();
     setProfileError(null);
     setProfileSuccess(null);
+    setProfileFieldErrors({});
     setIsSavingProfile(true);
     try {
       await updateProfile({
@@ -236,6 +239,9 @@ function DashboardContent() {
       });
       setProfileSuccess("Profile updated successfully!");
     } catch (err: any) {
+      if (err?.errors) {
+        setProfileFieldErrors(err.errors);
+      }
       setProfileError(err.message || "Failed to update profile.");
     } finally {
       setIsSavingProfile(false);
@@ -246,6 +252,7 @@ function DashboardContent() {
     e.preventDefault();
     setPasswordError(null);
     setPasswordSuccess(null);
+    setPasswordFieldErrors({});
 
     if (!currentPassword) {
       const msg = "Please enter your current password!";
@@ -286,6 +293,9 @@ function DashboardContent() {
         showToast(msg);
       }
     } catch (err: any) {
+      if (err?.errors) {
+        setPasswordFieldErrors(err.errors);
+      }
       const msg = err.message || "Failed to update password. Please verify your current password.";
       setPasswordError(msg);
       showToast(msg);
@@ -849,6 +859,9 @@ function DashboardContent() {
                       onChange={(e) => setEditName(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0b3b82]/30"
                     />
+                    {profileFieldErrors.name && (
+                      <p className="text-rose-500 text-[11px] mt-1 font-semibold">{profileFieldErrors.name[0]}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -860,6 +873,9 @@ function DashboardContent() {
                       onChange={(e) => setEditEmail(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0b3b82]/30"
                     />
+                    {profileFieldErrors.email && (
+                      <p className="text-rose-500 text-[11px] mt-1 font-semibold">{profileFieldErrors.email[0]}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -871,6 +887,9 @@ function DashboardContent() {
                       onChange={(e) => setEditPhone(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0b3b82]/30"
                     />
+                    {profileFieldErrors.phone && (
+                      <p className="text-rose-500 text-[11px] mt-1 font-semibold">{profileFieldErrors.phone[0]}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -882,6 +901,9 @@ function DashboardContent() {
                       onChange={(e) => setEditAddress(e.target.value)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0b3b82]/30"
                     />
+                    {profileFieldErrors.address && (
+                      <p className="text-rose-500 text-[11px] mt-1 font-semibold">{profileFieldErrors.address[0]}</p>
+                    )}
                   </div>
 
                   <button
@@ -937,9 +959,13 @@ function DashboardContent() {
                         setCurrentPassword(e.target.value);
                         setPasswordError(null);
                         setPasswordSuccess(null);
+                        setPasswordFieldErrors({});
                       }}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0b3b82]/30"
                     />
+                    {passwordFieldErrors.current_password && (
+                      <p className="text-rose-500 text-[11px] mt-1 font-semibold">{passwordFieldErrors.current_password[0]}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -953,9 +979,13 @@ function DashboardContent() {
                         setNewPassword(e.target.value);
                         setPasswordError(null);
                         setPasswordSuccess(null);
+                        setPasswordFieldErrors({});
                       }}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0b3b82]/30"
                     />
+                    {passwordFieldErrors.password && (
+                      <p className="text-rose-500 text-[11px] mt-1 font-semibold">{passwordFieldErrors.password[0]}</p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5">
@@ -969,9 +999,13 @@ function DashboardContent() {
                         setConfirmPassword(e.target.value);
                         setPasswordError(null);
                         setPasswordSuccess(null);
+                        setPasswordFieldErrors({});
                       }}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-800 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#0b3b82]/30"
                     />
+                    {passwordFieldErrors.password_confirmation && (
+                      <p className="text-rose-500 text-[11px] mt-1 font-semibold">{passwordFieldErrors.password_confirmation[0]}</p>
+                    )}
                   </div>
 
                   <button

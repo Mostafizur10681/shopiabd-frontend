@@ -32,6 +32,7 @@ export default function CheckoutPage() {
   const [postcode, setPostcode] = useState("1207");
   const [phone, setPhone] = useState(user?.phone || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
 
   // Ship to a different address toggle & state
   const [shipDifferent, setShipDifferent] = useState(false);
@@ -55,6 +56,7 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFieldErrors({});
 
     if (cart.length === 0) {
       showToast("Your cart is empty!");
@@ -112,12 +114,15 @@ export default function CheckoutPage() {
         const orderData = res.data || {};
         const orderNum = orderData.order_number || orderData.id || "CONFIRMED";
         showToast(`Order #${orderNum} placed successfully!`);
-        clearCart();
+        clearCart(true);
         router.push(`/track-order?order=${orderNum}`);
       } else {
         showToast(res?.message || "Failed to place order. Please try again.");
       }
     } catch (err: any) {
+      if (err?.errors) {
+        setFieldErrors(err.errors);
+      }
       const errorMsg = err?.message || "Error placing order. Please check your connection and try again.";
       showToast(errorMsg);
     } finally {
@@ -173,6 +178,9 @@ export default function CheckoutPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-white border border-slate-300 rounded-md px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#0b3b82] focus:ring-1 focus:ring-[#0b3b82]"
                   />
+                  {fieldErrors.customer_email && (
+                    <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.customer_email[0]}</p>
+                  )}
                 </div>
 
                 {/* First name * & Last name * */}
@@ -189,7 +197,7 @@ export default function CheckoutPage() {
                       className="w-full bg-white border border-slate-300 rounded-md px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#0b3b82] focus:ring-1 focus:ring-[#0b3b82]"
                     />
                   </div>
-
+ 
                   <div className="space-y-1">
                     <label className="font-bold text-slate-700 block">
                       Last name <span className="text-rose-600">*</span>
@@ -203,6 +211,9 @@ export default function CheckoutPage() {
                     />
                   </div>
                 </div>
+                {fieldErrors.customer_name && (
+                  <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.customer_name[0]}</p>
+                )}
 
                 {/* Company name (optional) */}
                 <div className="space-y-1">
@@ -251,6 +262,9 @@ export default function CheckoutPage() {
                     onChange={(e) => setStreetAddress2(e.target.value)}
                     className="w-full bg-white border border-slate-300 rounded-md px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#0b3b82] focus:ring-1 focus:ring-[#0b3b82]"
                   />
+                  {fieldErrors.address && (
+                    <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.address[0]}</p>
+                  )}
                 </div>
 
                 {/* Town / City * & Postcode / ZIP (optional) */}
@@ -303,6 +317,9 @@ export default function CheckoutPage() {
                     <option value="Mymensingh">Mymensingh</option>
                     <option value="Other">Other District</option>
                   </select>
+                  {fieldErrors.district && (
+                    <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.district[0]}</p>
+                  )}
                 </div>
 
                 {/* Phone * */}
@@ -317,6 +334,9 @@ export default function CheckoutPage() {
                     onChange={(e) => setPhone(e.target.value)}
                     className="w-full bg-white border border-slate-300 rounded-md px-3 py-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#0b3b82] focus:ring-1 focus:ring-[#0b3b82]"
                   />
+                  {fieldErrors.customer_phone && (
+                    <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.customer_phone[0]}</p>
+                  )}
                 </div>
 
                 {/* Checkbox: Ship to a different address? */}
@@ -355,6 +375,9 @@ export default function CheckoutPage() {
                         />
                       </div>
                     </div>
+                    {fieldErrors.ship_customer_name && (
+                      <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.ship_customer_name[0]}</p>
+                    )}
 
                     <div className="space-y-1">
                       <label className="font-bold text-slate-700 block">Company name (optional)</label>
@@ -393,6 +416,9 @@ export default function CheckoutPage() {
                         onChange={(e) => setShipStreetAddress2(e.target.value)}
                         className="w-full bg-white border border-slate-300 rounded-md px-3 py-2.5 text-xs text-slate-800"
                       />
+                      {fieldErrors.ship_address && (
+                        <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.ship_address[0]}</p>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -439,6 +465,9 @@ export default function CheckoutPage() {
                         onChange={(e) => setShipPhone(e.target.value)}
                         className="w-full bg-white border border-slate-300 rounded-md px-3 py-2.5 text-xs text-slate-800"
                       />
+                      {fieldErrors.ship_phone && (
+                        <p className="text-rose-500 text-[11px] mt-1 font-semibold">{fieldErrors.ship_phone[0]}</p>
+                      )}
                     </div>
                   </div>
                 )}
