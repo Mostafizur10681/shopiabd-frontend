@@ -162,7 +162,7 @@ export default function CartPage() {
               <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                 <button 
                   type="button"
-                  onClick={clearCart}
+                  onClick={() => clearCart()}
                   className="bg-[#0b3b82] hover:bg-red-700 text-white font-bold text-xs px-6 py-3 rounded-full transition shadow-md"
                 >
                   Clear All
