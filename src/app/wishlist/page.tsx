@@ -93,7 +93,7 @@ export default function WishlistPage() {
                       {/* Unit Price */}
                       <td className="py-4 px-6">
                         <div className="space-y-0.5">
-                          {item.originalPrice && (
+                          {Boolean(item.originalPrice && item.originalPrice > item.price) && (
                             <div className="text-slate-400 line-through text-xs">
                               ৳ {item.originalPrice.toLocaleString()}
                             </div>

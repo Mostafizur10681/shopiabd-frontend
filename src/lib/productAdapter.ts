@@ -56,16 +56,22 @@ export function normalizeProduct(p: any): UnifiedProduct {
   if (rawSalePrice !== null && rawSalePrice > 0 && rawSalePrice < rawPrice) {
     activePrice = rawSalePrice;
     originalPrice = rawPrice;
-  } else if (p.originalPrice) {
+  } else if (p.originalPrice && parseFloat(String(p.originalPrice)) > rawPrice) {
     originalPrice = parseFloat(String(p.originalPrice));
-  } else if (p.original_price) {
+  } else if (p.original_price && parseFloat(String(p.original_price)) > rawPrice) {
     originalPrice = parseFloat(String(p.original_price));
   }
 
   // Calculate discount percentage if not explicitly provided
   let discountPercentage = p.discount ? parseFloat(String(p.discount)) : undefined;
-  if (!discountPercentage && originalPrice && originalPrice > activePrice) {
-    discountPercentage = Math.round(((originalPrice - activePrice) / originalPrice) * 100);
+  if (!discountPercentage && originalPrice && originalPrice > activePrice && activePrice > 0) {
+    const calc = Math.round(((originalPrice - activePrice) / originalPrice) * 100);
+    if (!isNaN(calc) && calc > 0) {
+      discountPercentage = calc;
+    }
+  }
+  if (discountPercentage !== undefined && (isNaN(discountPercentage) || discountPercentage <= 0)) {
+    discountPercentage = undefined;
   }
 
   // Extract images

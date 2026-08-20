@@ -70,22 +70,39 @@ interface SkinCareSectionProps {
 export function SkinCareSection({ products: initialProducts }: SkinCareSectionProps) {
   const { addToCart, addToWishlist, isInWishlist, setQuickViewProduct } = useShop();
   const [items, setItems] = useState<any[]>(defaultSkinCareProducts);
+  const [bannerImgError, setBannerImgError] = useState(false);
+
+  const bannerImage = items && items.length > 0 && items[0]?.mainImage ? items[0].mainImage : null;
+
+  useEffect(() => {
+    setBannerImgError(false);
+  }, [items]);
 
   useEffect(() => {
     const processProducts = (rawList: any[]) => {
       if (!Array.isArray(rawList) || rawList.length === 0) return [];
 
-      const normalized = rawList.map((p: any) => ({
-        id: p.id,
-        name: p.name || "",
-        slug: p.slug || String(p.id),
-        category: typeof p.category === "string" ? p.category : (p.category?.name || "General"),
-        price: typeof p.price === "number" ? p.price : parseFloat(String(p.price || 0)),
-        originalPrice: p.originalPrice ? parseFloat(String(p.originalPrice)) : (p.sale_price && p.price ? parseFloat(String(p.price)) : undefined),
-        mainImage: p.main_image || p.image || p.mainImage || (Array.isArray(p.images) && p.images[0]) || "/prod_serum.png",
-        rating: p.rating ? parseFloat(String(p.rating)) : 5,
-        isSale: Boolean(p.isSale || p.sale_price || p.is_sale || p.isSale === undefined),
-      }));
+      const normalized = rawList.map((p: any) => {
+        const priceVal = typeof p.price === "number" ? p.price : parseFloat(String(p.price || 0)) || 0;
+        const saleVal = p.sale_price ? parseFloat(String(p.sale_price)) : 0;
+        let origPrice: number | undefined = undefined;
+        if (p.originalPrice && parseFloat(String(p.originalPrice)) > priceVal) {
+          origPrice = parseFloat(String(p.originalPrice));
+        } else if (saleVal > 0 && priceVal > saleVal) {
+          origPrice = priceVal;
+        }
+        return {
+          id: p.id,
+          name: p.name || "",
+          slug: p.slug || String(p.id),
+          category: typeof p.category === "string" ? p.category : (p.category?.name || "General"),
+          price: saleVal > 0 && priceVal > saleVal ? saleVal : priceVal,
+          originalPrice: origPrice,
+          mainImage: p.main_image || p.image || p.mainImage || (Array.isArray(p.images) && p.images[0]) || "/prod_serum.png",
+          rating: p.rating ? parseFloat(String(p.rating)) : 5,
+          isSale: Boolean(p.isSale || p.sale_price || p.is_sale || p.isSale === undefined),
+        };
+      });
 
       const keywords = ["skin", "care", "skincare", "cleanser", "wash", "lotion", "cream", "serum", "beauty", "face", "moisturiz"];
       const filtered = normalized.filter((p) => {
@@ -132,7 +149,7 @@ export function SkinCareSection({ products: initialProducts }: SkinCareSectionPr
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-sm">
         
         {/* Left Side: Vibrant Orange Banner Box (Col 4) */}
-        <div className="lg:col-span-4 bg-gradient-to-b from-[#ff7a00] to-[#ff9400] p-8 sm:p-10 flex flex-col justify-between relative overflow-hidden min-h-[440px]">
+        <div className={`lg:col-span-4 bg-gradient-to-b from-[#ff7a00] to-[#ff9400] p-8 sm:p-10 flex flex-col ${bannerImage && !bannerImgError ? "justify-between" : "justify-center items-center text-center"} relative overflow-hidden min-h-[440px]`}>
           {/* Subtle background circular pattern design */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border border-white/10 rounded-full pointer-events-none" />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] border border-white/10 rounded-full pointer-events-none" />
@@ -146,18 +163,19 @@ export function SkinCareSection({ products: initialProducts }: SkinCareSectionPr
             </h2>
           </div>
 
-          {/* Banner Graphic Showcase */}
-          <div className="relative z-10 w-full h-64 mt-6 flex items-center justify-center">
-            <div className="w-full h-full relative">
-              <Image 
-                src="/prod_serum.png" 
-                alt="Skin Care Showcase"
-                fill
-                sizes="(max-width: 768px) 100vw, 33vw"
-                className="object-contain drop-shadow-2xl"
-              />
+          {/* Banner Graphic Showcase (Shown ONLY if image is available and loads cleanly) */}
+          {bannerImage && !bannerImgError && (
+            <div className="relative z-10 w-full h-64 mt-6 flex items-center justify-center">
+              <div className="w-full h-full relative">
+                <img 
+                  src={bannerImage} 
+                  alt="Skin Care Showcase"
+                  className="w-full h-full object-contain drop-shadow-2xl"
+                  onError={() => setBannerImgError(true)}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Right Side: 6-Product Grid Container (Col 8) */}
@@ -237,7 +255,7 @@ export function SkinCareSection({ products: initialProducts }: SkinCareSectionPr
                   <span className="text-[#ff8c00] font-bold text-sm">
                     ৳{typeof prod.price === "number" ? prod.price.toLocaleString("en-US", { minimumFractionDigits: 2 }) : prod.price}
                   </span>
-                  {prod.originalPrice && (
+                  {Boolean(prod.originalPrice && prod.originalPrice > prod.price) && (
                     <span className="text-slate-400 line-through text-[11px]">
                       ৳{typeof prod.originalPrice === "number" ? prod.originalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 }) : prod.originalPrice}
                     </span>

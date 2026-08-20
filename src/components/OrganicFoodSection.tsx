@@ -70,22 +70,39 @@ interface OrganicFoodSectionProps {
 export function OrganicFoodSection({ products: initialProducts }: OrganicFoodSectionProps) {
   const { addToCart, addToWishlist, isInWishlist, setQuickViewProduct } = useShop();
   const [items, setItems] = useState<any[]>(defaultOrganicProducts);
+  const [bannerImgError, setBannerImgError] = useState(false);
+
+  const bannerImage = items && items.length > 0 && items[0]?.mainImage ? items[0].mainImage : null;
+
+  useEffect(() => {
+    setBannerImgError(false);
+  }, [items]);
 
   useEffect(() => {
     const processProducts = (rawList: any[]) => {
       if (!Array.isArray(rawList) || rawList.length === 0) return [];
 
-      const normalized = rawList.map((p: any) => ({
-        id: p.id,
-        name: p.name || "",
-        slug: p.slug || String(p.id),
-        category: typeof p.category === "string" ? p.category : (p.category?.name || "General"),
-        price: typeof p.price === "number" ? p.price : parseFloat(String(p.price || 0)),
-        originalPrice: p.originalPrice ? parseFloat(String(p.originalPrice)) : (p.sale_price && p.price ? parseFloat(String(p.price)) : undefined),
-        mainImage: p.main_image || p.image || p.mainImage || (Array.isArray(p.images) && p.images[0]) || "/prod_chia.png",
-        rating: p.rating ? parseFloat(String(p.rating)) : 5,
-        isSale: Boolean(p.isSale || p.sale_price || p.is_sale),
-      }));
+      const normalized = rawList.map((p: any) => {
+        const priceVal = typeof p.price === "number" ? p.price : parseFloat(String(p.price || 0)) || 0;
+        const saleVal = p.sale_price ? parseFloat(String(p.sale_price)) : 0;
+        let origPrice: number | undefined = undefined;
+        if (p.originalPrice && parseFloat(String(p.originalPrice)) > priceVal) {
+          origPrice = parseFloat(String(p.originalPrice));
+        } else if (saleVal > 0 && priceVal > saleVal) {
+          origPrice = priceVal;
+        }
+        return {
+          id: p.id,
+          name: p.name || "",
+          slug: p.slug || String(p.id),
+          category: typeof p.category === "string" ? p.category : (p.category?.name || "General"),
+          price: saleVal > 0 && priceVal > saleVal ? saleVal : priceVal,
+          originalPrice: origPrice,
+          mainImage: p.main_image || p.image || p.mainImage || (Array.isArray(p.images) && p.images[0]) || "/prod_chia.png",
+          rating: p.rating ? parseFloat(String(p.rating)) : 5,
+          isSale: Boolean(p.isSale || p.sale_price || p.is_sale),
+        };
+      });
 
       const keywords = ["organic", "food", "maca", "chia", "honey", "oil", "seed", "powder", "supplement", "nut", "grocery", "talmisri", "mustard"];
       const filtered = normalized.filter((p) => {
@@ -208,7 +225,7 @@ export function OrganicFoodSection({ products: initialProducts }: OrganicFoodSec
                   <span className="text-[#ff8c00] font-bold text-sm">
                     ৳{typeof prod.price === "number" ? prod.price.toLocaleString("en-US", { minimumFractionDigits: 2 }) : prod.price}
                   </span>
-                  {prod.originalPrice && (
+                  {Boolean(prod.originalPrice && prod.originalPrice > prod.price) && (
                     <span className="text-slate-400 line-through text-[11px]">
                       ৳{typeof prod.originalPrice === "number" ? prod.originalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 }) : prod.originalPrice}
                     </span>
@@ -228,7 +245,7 @@ export function OrganicFoodSection({ products: initialProducts }: OrganicFoodSec
         </div>
 
         {/* Right Side: Deep Navy Banner Box (Col 4) */}
-        <div className="lg:col-span-4 bg-[#0B3B82] p-8 sm:p-10 flex flex-col justify-between relative overflow-hidden min-h-[440px] order-1 lg:order-2 text-center">
+        <div className={`lg:col-span-4 bg-[#0B3B82] p-8 sm:p-10 flex flex-col ${bannerImage && !bannerImgError ? "justify-between" : "justify-center items-center"} relative overflow-hidden min-h-[440px] order-1 lg:order-2 text-center`}>
           {/* Subtle background circular pattern design */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border border-white/5 rounded-full pointer-events-none" />
 
@@ -241,18 +258,19 @@ export function OrganicFoodSection({ products: initialProducts }: OrganicFoodSec
             </h2>
           </div>
 
-          {/* Banner Graphic Showcase */}
-          <div className="relative z-10 w-full h-64 mt-6 flex items-center justify-center">
-            <div className="w-full h-full relative">
-              <Image 
-                src="/prod_chia.png" 
-                alt="Organic Food Showcase"
-                fill
-                sizes="(max-width: 768px) 100vw, 33vw"
-                className="object-contain drop-shadow-2xl"
-              />
+          {/* Banner Graphic Showcase (Shown ONLY if image is available and loads cleanly) */}
+          {bannerImage && !bannerImgError && (
+            <div className="relative z-10 w-full h-64 mt-6 flex items-center justify-center">
+              <div className="w-full h-full relative">
+                <img 
+                  src={bannerImage} 
+                  alt="Organic Food Showcase"
+                  className="w-full h-full object-contain drop-shadow-2xl"
+                  onError={() => setBannerImgError(true)}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
       </div>

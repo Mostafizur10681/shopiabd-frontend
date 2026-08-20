@@ -231,11 +231,12 @@ export default function SalesPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
               {filteredProducts.map((product) => {
-                const discountPercent = product.discountPercentage || (
-                  product.originalPrice
-                    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-                    : 0
-                );
+                const rawCalc = product.originalPrice && product.originalPrice > product.price
+                  ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+                  : 0;
+                const discountPercent = product.discountPercentage && product.discountPercentage > 0
+                  ? product.discountPercentage
+                  : (!isNaN(rawCalc) && rawCalc > 0 ? rawCalc : 0);
 
                 return (
                   <div
@@ -306,7 +307,7 @@ export default function SalesPage() {
                           <div className="text-base font-extrabold text-[#0b3b82]">
                             ৳ {product.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                           </div>
-                          {product.originalPrice && (
+                          {Boolean(product.originalPrice && product.originalPrice > product.price) && (
                             <div className="text-xs text-slate-400 line-through">
                               ৳ {product.originalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                             </div>

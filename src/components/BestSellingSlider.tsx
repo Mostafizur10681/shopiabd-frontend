@@ -12,18 +12,38 @@ export function BestSellingSlider({ products }: { products: any[] }) {
   const [isPaused, setIsPaused] = useState(false);
   const visibleCount = 5;
 
-  const normalizedList = (products || []).map(p => ({
-    id: p.id,
-    name: p.name,
-    slug: p.slug || String(p.id),
-    category: typeof p.category === "string" ? p.category : (p.category?.name || "General"),
-    price: typeof p.price === "number" ? p.price : parseFloat(p.price || 0),
-    originalPrice: p.originalPrice || (p.sale_price && p.price ? parseFloat(String(p.price)) : undefined),
-    mainImage: p.image || p.mainImage || "https://placehold.co/300x300/f1f5f9/94a3b8?text=Product",
-    rating: p.rating ? parseFloat(String(p.rating)) : 5,
-    discountPercentage: p.discountPercentage || (p.sale_price && p.price ? Math.round(((parseFloat(p.price) - parseFloat(p.sale_price)) / parseFloat(p.price)) * 100) : undefined),
-    isBestSeller: Boolean(p.best_seller || p.isBestSeller),
-  }));
+  const normalizedList = (products || []).map(p => {
+    const priceVal = typeof p.price === "number" ? p.price : parseFloat(String(p.price || 0)) || 0;
+    const saleVal = p.sale_price ? parseFloat(String(p.sale_price)) : 0;
+    
+    let origPrice: number | undefined = undefined;
+    if (p.originalPrice && parseFloat(String(p.originalPrice)) > priceVal) {
+      origPrice = parseFloat(String(p.originalPrice));
+    } else if (saleVal > 0 && priceVal > saleVal) {
+      origPrice = priceVal;
+    }
+
+    let discPercent: number | undefined = undefined;
+    if (typeof p.discountPercentage === "number" && !isNaN(p.discountPercentage) && p.discountPercentage > 0) {
+      discPercent = p.discountPercentage;
+    } else if (origPrice && priceVal > 0 && origPrice > priceVal) {
+      const calc = Math.round(((origPrice - priceVal) / origPrice) * 100);
+      if (!isNaN(calc) && calc > 0) discPercent = calc;
+    }
+
+    return {
+      id: p.id,
+      name: p.name,
+      slug: p.slug || String(p.id),
+      category: typeof p.category === "string" ? p.category : (p.category?.name || "General"),
+      price: priceVal,
+      originalPrice: origPrice,
+      mainImage: p.image || p.mainImage || "https://placehold.co/300x300/f1f5f9/94a3b8?text=Product",
+      rating: p.rating ? parseFloat(String(p.rating)) : 5,
+      discountPercentage: discPercent,
+      isBestSeller: Boolean(p.best_seller || p.isBestSeller),
+    };
+  });
 
   const bestSellers = normalizedList.filter((p) => p.isBestSeller);
   const displayList = bestSellers.length > 0 ? bestSellers : normalizedList;
@@ -105,7 +125,7 @@ export function BestSellingSlider({ products }: { products: any[] }) {
               className="p-4 flex flex-col justify-between hover:shadow-xl transition-all duration-300 bg-white relative group/card overflow-hidden"
             >
               {/* SALE Badge */}
-              {prod.discountPercentage && (
+              {Boolean(prod.discountPercentage && prod.discountPercentage > 0) && (
                 <span className="absolute top-3 left-3 z-10 bg-[#ff8c00] text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow">
                   SALE
                 </span>
@@ -176,9 +196,9 @@ export function BestSellingSlider({ products }: { products: any[] }) {
                   <span className="text-[#ff8c00] font-bold text-sm">
                     ৳{prod.price.toFixed(2)}
                   </span>
-                  {prod.originalPrice && (
+                  {Boolean(prod.originalPrice && prod.originalPrice > prod.price) && (
                     <span className="text-slate-400 line-through text-[11px]">
-                      ৳{prod.originalPrice.toFixed(2)}
+                      ৳{prod.originalPrice?.toFixed(2)}
                     </span>
                   )}
                 </div>

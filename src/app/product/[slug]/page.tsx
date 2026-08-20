@@ -27,6 +27,7 @@ import {
   MessageSquare,
   Send,
   User,
+  LogIn,
   CheckCircle2,
   Box
 } from "lucide-react";
@@ -68,6 +69,12 @@ export default function ProductDetailsPage() {
   const [newComment, setNewComment] = useState("");
   const [reviewerName, setReviewerName] = useState(user?.name || "");
   const [submittingReview, setSubmittingReview] = useState(false);
+
+  useEffect(() => {
+    if (user?.name) {
+      setReviewerName(user.name);
+    }
+  }, [user?.name]);
 
   useEffect(() => {
     if (!slugParam) return;
@@ -116,8 +123,8 @@ export default function ProductDetailsPage() {
             images: gallery,
             description: raw.description || "",
             shortDescription: raw.short_description || "",
-            rating: raw.rating ? parseFloat(String(raw.rating)) : 4.9,
-            reviewsCount: raw.reviews_count || 24,
+            rating: raw.rating ? parseFloat(String(raw.rating)) : 0,
+            reviewsCount: typeof raw.reviews_count === "number" ? raw.reviews_count : 0,
             attributes: Array.isArray(raw.attributes) ? raw.attributes : [],
             isBestSeller: Boolean(raw.best_seller || raw.is_bestseller),
             isFeatured: Boolean(raw.featured || raw.is_featured),
@@ -301,9 +308,10 @@ export default function ProductDetailsPage() {
     ? apiRelated.slice(0, 4) 
     : productsData.filter((p) => p.id !== product.id).slice(0, 4);
 
-  const discountPercent = product?.originalPrice && product?.price
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100) 
+  const rawDiscount = product?.originalPrice && product?.originalPrice > product?.price && product?.price
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
+  const discountPercent = !isNaN(rawDiscount) && rawDiscount > 0 ? rawDiscount : 0;
 
   const handleAddToCart = () => {
     addToCart({ ...product, selectedAttributes }, quantity);
@@ -314,10 +322,19 @@ export default function ProductDetailsPage() {
     router.push("/cart");
   };
 
-  const totalReviewsCount = reviews.length > 0 ? reviews.length : (product.reviewsCount || 24);
+  const totalReviewsCount = reviews.length;
   const averageRating = reviews.length > 0 
     ? (reviews.reduce((acc, r) => acc + (r.rating || 5), 0) / reviews.length).toFixed(1)
-    : (product.rating || 4.9);
+    : (product.rating ? Number(product.rating).toFixed(1) : "0.0");
+
+  const ratingCounts = useMemo(() => {
+    const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    reviews.forEach((r) => {
+      const star = Math.min(5, Math.max(1, Math.round(r.rating || 5)));
+      counts[star as 1 | 2 | 3 | 4 | 5] = (counts[star as 1 | 2 | 3 | 4 | 5] || 0) + 1;
+    });
+    return counts;
+  }, [reviews]);
 
   if (loading) {
     return (
@@ -457,7 +474,7 @@ export default function ProductDetailsPage() {
                 <div className="text-3xl sm:text-4xl font-black text-[#0b3b82]">
                   ৳ {product.price?.toLocaleString()}
                 </div>
-                {product.originalPrice && (
+                {Boolean(product.originalPrice && product.originalPrice > product.price) && (
                   <div className="text-lg text-slate-400 line-through font-semibold">
                     ৳ {product.originalPrice?.toLocaleString()}
                   </div>
@@ -638,7 +655,7 @@ export default function ProductDetailsPage() {
                       <span className="text-[#ff8c00] font-black text-xs">
                         ৳{rel.price?.toLocaleString()}
                       </span>
-                      {rel.originalPrice && (
+                      {Boolean(rel.originalPrice && rel.originalPrice > rel.price) && (
                         <span className="text-slate-400 line-through text-[10px]">
                           ৳{rel.originalPrice?.toLocaleString()}
                         </span>
@@ -704,13 +721,14 @@ export default function ProductDetailsPage() {
               <div className="space-y-6">
                 <div>
                   <h3 className="font-black text-slate-900 text-base mb-3">Product Description</h3>
-                  {product.description ? (
-                    <div className="text-slate-700 whitespace-pre-line leading-relaxed space-y-2">
-                      {product.description}
-                    </div>
+                  {product.description || product.shortDescription ? (
+                    <div 
+                      className="text-slate-700 leading-relaxed space-y-2 text-xs sm:text-sm"
+                      dangerouslySetInnerHTML={{ __html: product.description || product.shortDescription || "" }}
+                    />
                   ) : (
-                    <p className="text-slate-700 leading-relaxed">
-                      {product.name} is manufactured and tested under strict standards to ensure premium quality, high durability, and maximum satisfaction for our customers across Bangladesh.
+                    <p className="text-slate-500 italic leading-relaxed">
+                      No detailed description available for this product.
                     </p>
                   )}
                 </div>
@@ -723,19 +741,21 @@ export default function ProductDetailsPage() {
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-slate-700">
                     <li className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#0b3b82] shrink-0" />
-                      <span>100% Genuine and authentic <strong>{product.brand || "brand"}</strong> product guaranteed.</span>
+                      <span>Product Name: <strong>{product.name}</strong></span>
                     </li>
+                    {product.brand && (
+                      <li className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#0b3b82] shrink-0" />
+                        <span>Brand: <strong>{product.brand}</strong></span>
+                      </li>
+                    )}
                     <li className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#0b3b82] shrink-0" />
                       <span>Category: <strong>{product.category} {product.subCategory ? `(${product.subCategory})` : ""}</strong></span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#0b3b82] shrink-0" />
-                      <span>Stock Status: <strong>{product.stock > 0 ? `${product.stock} items ready to dispatch` : "Available on backorder"}</strong></span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#0b3b82] shrink-0" />
-                      <span>Nationwide Cash on Delivery with open-box inspection.</span>
+                      <span>Stock Status: <strong>{product.stock > 0 ? `${product.stock} units in stock` : "Out of stock"}</strong></span>
                     </li>
                   </ul>
                 </div>
@@ -752,22 +772,28 @@ export default function ProductDetailsPage() {
                       <td className="py-3 px-4 font-bold text-slate-800 w-1/3">Product Name</td>
                       <td className="py-3 px-4 text-slate-700">{product.name}</td>
                     </tr>
-                    <tr>
-                      <td className="py-3 px-4 font-bold text-slate-800">SKU Code</td>
-                      <td className="py-3 px-4 text-slate-700 font-mono font-semibold">{product.sku}</td>
-                    </tr>
-                    <tr className="bg-slate-50/70">
-                      <td className="py-3 px-4 font-bold text-slate-800">Brand / Manufacturer</td>
-                      <td className="py-3 px-4 text-slate-700 font-semibold">{product.brand}</td>
-                    </tr>
+                    {product.sku && (
+                      <tr>
+                        <td className="py-3 px-4 font-bold text-slate-800">SKU Code</td>
+                        <td className="py-3 px-4 text-slate-700 font-mono font-semibold">{product.sku}</td>
+                      </tr>
+                    )}
+                    {product.brand && (
+                      <tr className="bg-slate-50/70">
+                        <td className="py-3 px-4 font-bold text-slate-800">Brand / Manufacturer</td>
+                        <td className="py-3 px-4 text-slate-700 font-semibold">{product.brand}</td>
+                      </tr>
+                    )}
                     <tr>
                       <td className="py-3 px-4 font-bold text-slate-800">Category</td>
                       <td className="py-3 px-4 text-slate-700">{product.category} {product.subCategory ? `> ${product.subCategory}` : ""}</td>
                     </tr>
-                    <tr className="bg-slate-50/70">
-                      <td className="py-3 px-4 font-bold text-slate-800">Unit of Measure</td>
-                      <td className="py-3 px-4 text-slate-700">{product.unit || "pcs"}</td>
-                    </tr>
+                    {product.unit && (
+                      <tr className="bg-slate-50/70">
+                        <td className="py-3 px-4 font-bold text-slate-800">Unit of Measure</td>
+                        <td className="py-3 px-4 text-slate-700">{product.unit}</td>
+                      </tr>
+                    )}
                     <tr>
                       <td className="py-3 px-4 font-bold text-slate-800">Stock Availability</td>
                       <td className="py-3 px-4 text-slate-700 font-semibold text-emerald-600">
@@ -782,15 +808,6 @@ export default function ProductDetailsPage() {
                         <td className="py-3 px-4 text-slate-700 font-semibold">{vals.join(", ")}</td>
                       </tr>
                     ))}
-
-                    <tr className={Object.keys(groupedAttributes).length % 2 === 0 ? "bg-slate-50/70" : ""}>
-                      <td className="py-3 px-4 font-bold text-slate-800">Shipping &amp; Delivery</td>
-                      <td className="py-3 px-4 text-slate-700">Inside Dhaka: 24–48h (৳60) | Outside Dhaka: 2–4 Days (৳120)</td>
-                    </tr>
-                    <tr className={Object.keys(groupedAttributes).length % 2 !== 0 ? "bg-slate-50/70" : ""}>
-                      <td className="py-3 px-4 font-bold text-slate-800">Warranty &amp; Returns</td>
-                      <td className="py-3 px-4 text-slate-700">7 Days Hassle-Free Return &amp; Exchange Guarantee</td>
-                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -808,34 +825,26 @@ export default function ProductDetailsPage() {
                     </div>
                     <div className="flex items-center justify-center md:justify-start text-amber-400 gap-1">
                       {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-amber-400" />
+                        <Star key={i} className={`w-4 h-4 ${i < Math.floor(Number(averageRating)) ? "fill-amber-400 text-amber-400" : "fill-slate-200 text-slate-200"}`} />
                       ))}
                     </div>
-                    <p className="text-xs text-slate-500">Based on {totalReviewsCount} customer ratings</p>
+                    <p className="text-xs text-slate-500">Based on {totalReviewsCount} customer rating{totalReviewsCount === 1 ? "" : "s"}</p>
                   </div>
 
                   <div className="md:col-span-8 border-t md:border-t-0 md:border-l border-slate-200 pt-4 md:pt-0 md:pl-6 space-y-2 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="w-12 font-bold text-slate-700">5 Star</span>
-                      <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-400 w-[85%]" />
-                      </div>
-                      <span className="w-8 text-right text-slate-500 font-bold">85%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-12 font-bold text-slate-700">4 Star</span>
-                      <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-400 w-[12%]" />
-                      </div>
-                      <span className="w-8 text-right text-slate-500 font-bold">12%</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-12 font-bold text-slate-700">3 Star</span>
-                      <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-400 w-[3%]" />
-                      </div>
-                      <span className="w-8 text-right text-slate-500 font-bold">3%</span>
-                    </div>
+                    {[5, 4, 3, 2, 1].map((star) => {
+                      const count = ratingCounts[star as 1 | 2 | 3 | 4 | 5] || 0;
+                      const percent = totalReviewsCount > 0 ? Math.round((count / totalReviewsCount) * 100) : 0;
+                      return (
+                        <div key={star} className="flex items-center gap-2">
+                          <span className="w-12 font-bold text-slate-700">{star} Star</span>
+                          <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-amber-400" style={{ width: `${percent}%` }} />
+                          </div>
+                          <span className="w-8 text-right text-slate-500 font-bold">{percent}%</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -843,42 +852,9 @@ export default function ProductDetailsPage() {
                 <div className="space-y-4">
                   <h4 className="font-bold text-slate-900 text-sm">Customer Feedback</h4>
                   {reviews.length === 0 ? (
-                    <div className="space-y-3">
-                      <div className="border border-slate-100 rounded-xl p-4 bg-white space-y-1.5 shadow-2xs">
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-900">Tanvir Hasan</span>
-                            <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
-                              Verified Purchase
-                            </span>
-                          </div>
-                          <span className="text-slate-400">2 days ago</span>
-                        </div>
-                        <div className="flex items-center text-amber-400 text-[11px]">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} className="w-3 h-3 fill-amber-400" />
-                          ))}
-                        </div>
-                        <p className="text-xs text-slate-600">Excellent original quality product, fits comfortably and delivered very fast!</p>
-                      </div>
-
-                      <div className="border border-slate-100 rounded-xl p-4 bg-white space-y-1.5 shadow-2xs">
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-900">Farhan Ahmed</span>
-                            <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
-                              Verified Purchase
-                            </span>
-                          </div>
-                          <span className="text-slate-400">1 week ago</span>
-                        </div>
-                        <div className="flex items-center text-amber-400 text-[11px]">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} className="w-3 h-3 fill-amber-400" />
-                          ))}
-                        </div>
-                        <p className="text-xs text-slate-600">100% authentic product. Very satisfied with Shopia BD service.</p>
-                      </div>
+                    <div className="border border-slate-200/80 rounded-2xl p-8 bg-white text-center space-y-2">
+                      <p className="text-slate-600 text-sm font-semibold">No reviews yet for this product.</p>
+                      <p className="text-slate-400 text-xs">Be the first to share your thoughts with other customers!</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -899,73 +875,95 @@ export default function ProductDetailsPage() {
                           </div>
                           <div className="flex items-center text-amber-400 text-[11px]">
                             {[...Array(5)].map((_, i) => (
-                              <Star key={i} className={`w-3 h-3 ${i < rev.rating ? "fill-amber-400" : "text-slate-200"}`} />
+                              <Star key={i} className={`w-3 h-3 ${i < (rev.rating || 5) ? "fill-amber-400 text-amber-400" : "fill-slate-200 text-slate-200"}`} />
                             ))}
                           </div>
-                          <p className="text-xs text-slate-600 leading-relaxed">{rev.comment}</p>
+                          <p className="text-xs text-slate-600 whitespace-pre-line">{rev.comment}</p>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
 
-                {/* Add a Review Form */}
-                <form onSubmit={handleReviewSubmit} className="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 space-y-4">
-                  <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-[#0b3b82]" /> Write a Customer Review
-                  </h4>
+                {/* Add a Review Form or Login Prompt */}
+                {user ? (
+                  <form onSubmit={handleReviewSubmit} className="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 space-y-4">
+                    <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-[#0b3b82]" /> Write a Customer Review
+                    </h4>
 
-                  {/* Rating Selector */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Your Overall Rating:</label>
-                    <div className="flex items-center gap-1.5">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setNewRating(star)}
-                          className="p-1 text-amber-400 hover:scale-125 transition cursor-pointer"
-                        >
-                          <Star className={`w-6 h-6 ${star <= newRating ? "fill-amber-400" : "text-slate-300"}`} />
-                        </button>
-                      ))}
-                      <span className="text-xs font-bold text-slate-700 ml-2">{newRating} out of 5</span>
+                    {/* Rating Selector */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700 block">Your Overall Rating:</label>
+                      <div className="flex items-center gap-1.5">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setNewRating(star)}
+                            className="p-1 text-amber-400 hover:scale-125 transition cursor-pointer"
+                          >
+                            <Star className={`w-6 h-6 ${star <= newRating ? "fill-amber-400" : "text-slate-300"}`} />
+                          </button>
+                        ))}
+                        <span className="text-xs font-bold text-slate-700 ml-2">{newRating} out of 5</span>
+                      </div>
+                    </div>
+
+                    {/* Name Input (Read Only) */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700 block">Your Name</label>
+                      <input
+                        type="text"
+                        readOnly
+                        value={user?.name || reviewerName || "Logged In Customer"}
+                        className="w-full bg-slate-100/80 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-700 font-semibold cursor-not-allowed select-none focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Review Textarea */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700 block">Your Review</label>
+                      <textarea
+                        rows={3}
+                        placeholder="Share your experience with this product (e.g. quality, fitting, packaging)..."
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0b3b82]/30"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={submittingReview}
+                      className="bg-[#0b3b82] hover:bg-[#072450] text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-sm hover:shadow transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {submittingReview ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                      Submit Review
+                    </button>
+                  </form>
+                ) : (
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 sm:p-8 text-center space-y-3">
+                    <div className="w-12 h-12 bg-blue-100/60 text-[#0b3b82] rounded-full flex items-center justify-center mx-auto">
+                      <User className="w-6 h-6" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-slate-900 text-sm sm:text-base">Want to write a review?</h4>
+                      <p className="text-xs text-slate-500 max-w-md mx-auto">
+                        Please log in to your customer account to rate this product and share your feedback.
+                      </p>
+                    </div>
+                    <div>
+                      <Link
+                        href="/account?mode=login"
+                        className="inline-flex items-center gap-2 bg-[#0b3b82] hover:bg-[#072450] text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-sm hover:shadow transition cursor-pointer"
+                      >
+                        <LogIn className="w-4 h-4" />
+                        Log In to Write a Review
+                      </Link>
                     </div>
                   </div>
-
-                  {/* Name Input */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Your Name</label>
-                    <input
-                      type="text"
-                      placeholder="Your full name"
-                      value={reviewerName}
-                      onChange={(e) => setReviewerName(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0b3b82]/30"
-                    />
-                  </div>
-
-                  {/* Review Textarea */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 block">Your Review</label>
-                    <textarea
-                      rows={3}
-                      placeholder="Share your experience with this product (e.g. quality, fitting, packaging)..."
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0b3b82]/30"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={submittingReview}
-                    className="bg-[#0b3b82] hover:bg-[#072450] text-white font-bold text-xs px-6 py-2.5 rounded-full shadow-sm hover:shadow transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                  >
-                    {submittingReview ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                    Submit Review
-                  </button>
-                </form>
+                )}
 
               </div>
             )}

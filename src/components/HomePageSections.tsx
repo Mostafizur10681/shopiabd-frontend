@@ -256,7 +256,7 @@ export function ProductCard({ product }: { product: any }) {
     <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 hover:shadow-xl hover:border-[#0b3b82]/20 transition group flex flex-col justify-between relative">
       {/* Badges */}
       <div className="absolute top-5 left-5 z-10 flex flex-col gap-1.5">
-        {product.discountPercentage && (
+        {Boolean(product.discountPercentage && product.discountPercentage > 0) && (
           <span className="bg-[#e60000] text-white font-bold text-[10px] px-2 py-0.5 rounded-md shadow-md">
             -{product.discountPercentage}% OFF
           </span>
@@ -301,9 +301,11 @@ export function ProductCard({ product }: { product: any }) {
       {/* Price & Action */}
       <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
         <div>
-          <div className="text-slate-400 line-through text-xs font-semibold">
-            ৳{product.originalPrice}
-          </div>
+          {Boolean(product.originalPrice && product.originalPrice > product.price) && (
+            <div className="text-slate-400 line-through text-xs font-semibold">
+              ৳{product.originalPrice}
+            </div>
+          )}
           <div className="text-[#e60000] font-black text-lg">
             ৳{product.price}
           </div>

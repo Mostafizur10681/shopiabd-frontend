@@ -128,7 +128,7 @@ export default function BestsellersPage() {
               className="p-5 flex flex-col justify-between hover:shadow-xl transition-all duration-300 bg-white relative group/card overflow-hidden"
             >
               {/* SALE Badge */}
-              {prod.discountPercentage && (
+              {Boolean(prod.discountPercentage && prod.discountPercentage > 0) && (
                 <span className="absolute top-3 left-3 z-10 bg-[#ff8c00] text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow">
                   SALE
                 </span>
@@ -195,7 +195,7 @@ export default function BestsellersPage() {
                   <span className="text-sm font-black text-[#0b3b82] block">
                     ৳{prod.price.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </span>
-                  {prod.originalPrice && (
+                  {Boolean(prod.originalPrice && prod.originalPrice > prod.price) && (
                     <span className="text-[11px] text-slate-400 line-through">
                       ৳{prod.originalPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </span>

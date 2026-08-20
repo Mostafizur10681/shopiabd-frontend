@@ -25,9 +25,10 @@ export function QuickViewModal() {
     ? quickViewProduct.price 
     : parseFloat(quickViewProduct.price || "0");
 
-  const originalPrice = quickViewProduct.originalPrice 
-    ? (typeof quickViewProduct.originalPrice === "number" ? quickViewProduct.originalPrice : parseFloat(quickViewProduct.originalPrice))
+  const originalPriceVal = quickViewProduct.originalPrice 
+    ? (typeof quickViewProduct.originalPrice === "number" ? quickViewProduct.originalPrice : parseFloat(String(quickViewProduct.originalPrice)))
     : null;
+  const originalPrice = originalPriceVal && !isNaN(originalPriceVal) && originalPriceVal > price ? originalPriceVal : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -51,7 +52,7 @@ export function QuickViewModal() {
         <div className="relative bg-slate-50/60 p-8 flex items-center justify-center min-h-[320px] md:min-h-[400px]">
           {/* Badges */}
           <div className="absolute top-6 left-6 z-10 flex flex-col gap-2">
-            {quickViewProduct.discountPercentage && (
+            {Boolean(quickViewProduct.discountPercentage && quickViewProduct.discountPercentage > 0) && (
               <span className="bg-[#ff8c00] text-white font-black text-[11px] px-3 py-1 rounded-full uppercase tracking-wider shadow">
                 SALE
               </span>
@@ -112,7 +113,7 @@ export function QuickViewModal() {
               <span className="text-3xl font-black text-[#ff8c00]">
                 ৳{price.toFixed(2)}
               </span>
-              {originalPrice && (
+              {Boolean(originalPrice && originalPrice > price) && (
                 <span className="text-base text-slate-400 line-through font-medium">
                   ৳{originalPrice.toFixed(2)}
                 </span>
