@@ -6,19 +6,20 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import productsData from "@/data/products.json";
 import { TrustBadgesBar } from "@/components/TrustBadgesBar";
+import { ProductImageModal } from "@/components/ProductImageModal";
 import { useShop } from "@/context/ShopContext";
-import { 
-  Heart, 
-  Share2, 
-  ShieldCheck, 
-  Truck, 
-  RotateCcw, 
-  Star, 
-  Minus, 
-  Plus, 
-  Check, 
-  ShoppingCart, 
-  PhoneCall, 
+import {
+  Heart,
+  Share2,
+  ShieldCheck,
+  Truck,
+  RotateCcw,
+  Star,
+  Minus,
+  Plus,
+  Check,
+  ShoppingCart,
+  PhoneCall,
   Eye,
   Loader2,
   Tag,
@@ -58,6 +59,7 @@ export default function ProductDetailsPage() {
   const [apiProduct, setApiProduct] = useState<any>(null);
   const [apiRelated, setApiRelated] = useState<any[]>([]);
   const [selectedImage, setSelectedImage] = useState<string>("");
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<"description" | "additional" | "reviews">("description");
   const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
@@ -92,7 +94,7 @@ export default function ProductDetailsPage() {
         if (raw) {
           const rawPrice = parseFloat(String(raw.price || 0)) || 0;
           const rawSalePrice = raw.sale_price !== null && raw.sale_price !== undefined ? parseFloat(String(raw.sale_price)) : null;
-          
+
           let activePrice = rawPrice;
           let originalPrice: number | undefined = undefined;
 
@@ -190,7 +192,7 @@ export default function ProductDetailsPage() {
           );
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [slugParam]);
 
   const fetchReviews = async (productId: number | string) => {
@@ -304,8 +306,8 @@ export default function ProductDetailsPage() {
   }, [product?.attributes]);
 
   // Related Products
-  const relatedProducts = apiRelated.length > 0 
-    ? apiRelated.slice(0, 4) 
+  const relatedProducts = apiRelated.length > 0
+    ? apiRelated.slice(0, 4)
     : productsData.filter((p) => p.id !== product.id).slice(0, 4);
 
   const rawDiscount = product?.originalPrice && product?.originalPrice > product?.price && product?.price
@@ -323,7 +325,7 @@ export default function ProductDetailsPage() {
   };
 
   const totalReviewsCount = reviews.length;
-  const averageRating = reviews.length > 0 
+  const averageRating = reviews.length > 0
     ? (reviews.reduce((acc, r) => acc + (r.rating || 5), 0) / reviews.length).toFixed(1)
     : (product.rating ? Number(product.rating).toFixed(1) : "0.0");
 
@@ -347,7 +349,7 @@ export default function ProductDetailsPage() {
 
   return (
     <div className="bg-slate-50 min-h-screen font-sans pb-20">
-      
+
       {/* Breadcrumb Bar */}
       <div className="bg-white border-b border-slate-200/80 py-3.5 px-4">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-xs text-slate-500 overflow-x-auto whitespace-nowrap">
@@ -368,16 +370,20 @@ export default function ProductDetailsPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 pt-8 space-y-10">
-        
+
         {/* Main 3-Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* Main Product Box (Col 9) */}
           <div className="lg:col-span-9 bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-8">
-            
+
             {/* Left Image Showcase (Col 5) */}
             <div className="md:col-span-5 space-y-4">
-              <div className="relative w-full h-[350px] sm:h-[400px] bg-slate-50 rounded-2xl border border-slate-200/80 p-6 flex items-center justify-center overflow-hidden group">
+              <div 
+                onClick={() => setIsImageModalOpen(true)}
+                className="relative w-full h-[350px] sm:h-[400px] bg-slate-50 rounded-2xl border border-slate-200/80 p-6 flex items-center justify-center overflow-hidden group cursor-pointer"
+                title="Click image to open full view modal"
+              >
                 {discountPercent > 0 && (
                   <div className="absolute top-4 left-4 z-10 bg-rose-600 text-white font-black text-xs px-3 py-1 rounded-full shadow-md tracking-wider">
                     -{discountPercent}% OFF
@@ -398,6 +404,10 @@ export default function ProductDetailsPage() {
                   sizes="(max-width: 768px) 100vw, 33vw"
                   className="object-contain p-4 group-hover:scale-105 transition duration-500"
                 />
+
+                <div className="absolute bottom-4 right-4 z-10 bg-black/60 text-white p-2.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 text-xs font-bold px-3">
+                  <Eye className="w-4 h-4" /> Click to Zoom
+                </div>
               </div>
 
               {/* Gallery Thumbnails Carousel Row */}
@@ -407,12 +417,13 @@ export default function ProductDetailsPage() {
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setSelectedImage(img)}
-                      className={`relative w-16 h-16 rounded-xl border-2 overflow-hidden shrink-0 bg-slate-50 transition-all ${
-                        selectedImage === img 
-                          ? "border-[#0b3b82] ring-2 ring-[#0b3b82]/20 scale-105" 
+                      onClick={() => {
+                        setSelectedImage(img);
+                      }}
+                      className={`relative w-16 h-16 rounded-xl border-2 overflow-hidden shrink-0 bg-slate-50 transition-all ${selectedImage === img
+                          ? "border-[#0b3b82] ring-2 ring-[#0b3b82]/20 scale-105"
                           : "border-slate-200 hover:border-slate-400 opacity-70 hover:opacity-100"
-                      }`}
+                        }`}
                     >
                       <Image src={img} alt={`${product.name} thumbnail ${idx + 1}`} fill className="object-contain p-1" />
                     </button>
@@ -423,7 +434,7 @@ export default function ProductDetailsPage() {
 
             {/* Right Product Purchase Details (Col 7) */}
             <div className="md:col-span-7 space-y-5">
-              
+
               {/* Category, Brand, Stock Badges & Title */}
               <div className="space-y-2 border-b border-slate-100 pb-4">
                 <div className="flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
@@ -438,11 +449,10 @@ export default function ProductDetailsPage() {
                     )}
                   </div>
 
-                  <span className={`inline-flex items-center gap-1 font-bold px-2.5 py-0.5 rounded-full border text-[11px] ${
-                    product.stock > 0 
-                      ? "text-emerald-700 bg-emerald-50 border-emerald-200" 
+                  <span className={`inline-flex items-center gap-1 font-bold px-2.5 py-0.5 rounded-full border text-[11px] ${product.stock > 0
+                      ? "text-emerald-700 bg-emerald-50 border-emerald-200"
                       : "text-rose-700 bg-rose-50 border-rose-200"
-                  }`}>
+                    }`}>
                     <Check className="w-3 h-3" /> {product.stock > 0 ? `${product.stock} in stock` : "Out of Stock"}
                   </span>
                 </div>
@@ -508,11 +518,10 @@ export default function ProductDetailsPage() {
                               key={val}
                               type="button"
                               onClick={() => setSelectedAttributes((prev) => ({ ...prev, [attrName]: val }))}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                                isSelected
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${isSelected
                                   ? "bg-[#0b3b82] text-white border-[#0b3b82] shadow-sm scale-105"
                                   : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
-                              }`}
+                                }`}
                             >
                               {val}
                             </button>
@@ -527,7 +536,7 @@ export default function ProductDetailsPage() {
               {/* Quantity & CTA Buttons */}
               <div className="space-y-3 pt-3 border-t border-slate-100">
                 <div className="flex items-center gap-3 flex-wrap">
-                  
+
                   {/* Quantity Counter */}
                   <div className="inline-flex items-center border border-slate-200 rounded-full bg-slate-50 px-3 py-1.5">
                     <button
@@ -589,7 +598,7 @@ export default function ProductDetailsPage() {
                           navigator.share({
                             title: product.name,
                             url: window.location.href,
-                          }).catch(() => {});
+                          }).catch(() => { });
                         } else {
                           navigator.clipboard.writeText(window.location.href);
                           showToast("Product link copied to clipboard!");
@@ -609,7 +618,7 @@ export default function ProductDetailsPage() {
                   <p className="text-xs font-bold text-slate-800">Direct Phone Order Hotline</p>
                   <p className="text-[11px] text-slate-500">Call anytime for quick COD booking</p>
                 </div>
-                <a 
+                <a
                   href="tel:01681135030"
                   className="bg-[#0b3b82] text-white font-bold text-xs px-4 py-2 rounded-full flex items-center gap-1.5 shadow-sm hover:bg-[#082a5e] transition shrink-0"
                 >
@@ -628,13 +637,13 @@ export default function ProductDetailsPage() {
 
             <div className="space-y-4">
               {relatedProducts.map((rel) => (
-                <div 
-                  key={rel.id} 
+                <div
+                  key={rel.id}
                   className="border border-slate-100 rounded-2xl p-3 hover:shadow-md transition bg-white space-y-2 group"
                 >
                   {/* Thumbnail Image */}
                   <Link href={`/product/${rel.slug || rel.id}`} className="block relative w-full h-28 bg-slate-50 rounded-xl overflow-hidden p-2">
-                    <Image 
+                    <Image
                       src={rel.mainImage}
                       alt={rel.name}
                       fill
@@ -682,47 +691,44 @@ export default function ProductDetailsPage() {
             <button
               type="button"
               onClick={() => setActiveTab("description")}
-              className={`pb-3 border-b-2 whitespace-nowrap transition cursor-pointer font-bold ${
-                activeTab === "description"
+              className={`pb-3 border-b-2 whitespace-nowrap transition cursor-pointer font-bold ${activeTab === "description"
                   ? "border-[#0b3b82] text-[#0b3b82]"
                   : "border-transparent text-slate-400 hover:text-slate-700"
-              }`}
+                }`}
             >
               Description
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("additional")}
-              className={`pb-3 border-b-2 whitespace-nowrap transition cursor-pointer font-bold ${
-                activeTab === "additional"
+              className={`pb-3 border-b-2 whitespace-nowrap transition cursor-pointer font-bold ${activeTab === "additional"
                   ? "border-[#0b3b82] text-[#0b3b82]"
                   : "border-transparent text-slate-400 hover:text-slate-700"
-              }`}
+                }`}
             >
               Additional Information
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("reviews")}
-              className={`pb-3 border-b-2 whitespace-nowrap transition cursor-pointer font-bold ${
-                activeTab === "reviews"
+              className={`pb-3 border-b-2 whitespace-nowrap transition cursor-pointer font-bold ${activeTab === "reviews"
                   ? "border-[#0b3b82] text-[#0b3b82]"
                   : "border-transparent text-slate-400 hover:text-slate-700"
-              }`}
+                }`}
             >
               Reviews ({totalReviewsCount})
             </button>
           </div>
 
           <div className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-1">
-            
+
             {/* 1. Description Tab */}
             {activeTab === "description" && (
               <div className="space-y-6">
                 <div>
                   <h3 className="font-black text-slate-900 text-base mb-3">Product Description</h3>
                   {product.description || product.shortDescription ? (
-                    <div 
+                    <div
                       className="text-slate-700 leading-relaxed space-y-2 text-xs sm:text-sm"
                       dangerouslySetInnerHTML={{ __html: product.description || product.shortDescription || "" }}
                     />
@@ -800,7 +806,7 @@ export default function ProductDetailsPage() {
                         {product.stock > 0 ? `${product.stock} units in stock` : "Out of stock"}
                       </td>
                     </tr>
-                    
+
                     {/* All Dynamic Database Attributes */}
                     {Object.entries(groupedAttributes).map(([name, vals], idx) => (
                       <tr key={name} className={idx % 2 === 0 ? "bg-slate-50/70" : ""}>
@@ -816,7 +822,7 @@ export default function ProductDetailsPage() {
             {/* 3. Reviews Tab */}
             {activeTab === "reviews" && (
               <div className="space-y-8">
-                
+
                 {/* Rating Overview Box */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-200/80 items-center">
                   <div className="md:col-span-4 text-center md:text-left space-y-1">
@@ -977,6 +983,19 @@ export default function ProductDetailsPage() {
         </section>
 
       </div>
+
+      {/* Product Image Lightbox Modal */}
+      <ProductImageModal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        images={product.images && product.images.length > 0 ? product.images : [selectedImage || product.mainImage]}
+        initialIndex={
+          product.images && Array.isArray(product.images)
+            ? Math.max(0, product.images.indexOf(selectedImage))
+            : 0
+        }
+        productName={product.name}
+      />
     </div>
   );
 }

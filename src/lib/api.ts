@@ -171,7 +171,11 @@ export async function placeOrder(payload: CreateOrderPayload) {
   });
 }
 
-export async function fetchFromApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+export interface FetchOptions extends RequestInit {
+  suppressThrow?: boolean;
+}
+
+export async function fetchFromApi<T>(endpoint: string, options?: FetchOptions): Promise<T> {
   const url = endpoint.startsWith("http") ? endpoint : `${API_V1}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
 
   // Attach Sanctum token if available in localStorage
@@ -199,6 +203,9 @@ export async function fetchFromApi<T>(endpoint: string, options?: RequestInit): 
       cache: "no-store",
     });
   } catch (err: any) {
+    if (options?.suppressThrow) {
+      return { success: false, data: null } as unknown as T;
+    }
     const isNetworkError = err instanceof TypeError || err?.name === "TypeError" || err?.message?.includes("fetch");
     const msg = isNetworkError
       ? `Failed to connect to API server at ${url}. Please ensure the backend server is running.`
@@ -209,6 +216,9 @@ export async function fetchFromApi<T>(endpoint: string, options?: RequestInit): 
   }
 
   if (!res.ok) {
+    if (options?.suppressThrow) {
+      return { success: false, data: null } as unknown as T;
+    }
     let errMessage = `HTTP error ${res.status}`;
     let validationErrors: Record<string, string[]> | undefined = undefined;
     try {
@@ -253,7 +263,7 @@ export async function getProducts(params?: {
   const query = searchParams.toString();
   const endpoint = `/products${query ? `?${query}` : ""}`;
   try {
-    return await fetchFromApi<{ success: boolean; data: { data: ApiProduct[]; meta?: any; links?: any } }>(endpoint);
+    return await fetchFromApi<{ success: boolean; data: { data: ApiProduct[]; meta?: any; links?: any } }>(endpoint, { suppressThrow: true });
   } catch (err) {
     console.warn(`API ${endpoint} request failed:`, err);
     return { success: false, data: { data: [] } };
@@ -261,13 +271,17 @@ export async function getProducts(params?: {
 }
 
 export async function getProductBySlugOrId(idOrSlug: string | number) {
-  return fetchFromApi<{ success: boolean; data: ApiProduct }>(`/products/${idOrSlug}`);
+  try {
+    return await fetchFromApi<{ success: boolean; data: ApiProduct }>(`/products/${idOrSlug}`, { suppressThrow: true });
+  } catch {
+    return { success: false, data: null as any };
+  }
 }
 
 // ── Categories ──
 export async function getCategories(all: boolean = true) {
   try {
-    return await fetchFromApi<{ success: boolean; data: ApiCategory[] }>(`/categories${all ? "?all=1" : ""}`);
+    return await fetchFromApi<{ success: boolean; data: ApiCategory[] }>(`/categories${all ? "?all=1" : ""}`, { suppressThrow: true });
   } catch (err) {
     console.warn("API /categories request failed:", err);
     return { success: false, data: [] };
@@ -277,7 +291,7 @@ export async function getCategories(all: boolean = true) {
 // ── Banners ──
 export async function getBanners() {
   try {
-    return await fetchFromApi<{ success: boolean; data: ApiBanner[] }>("/banners");
+    return await fetchFromApi<{ success: boolean; data: ApiBanner[] }>("/banners", { suppressThrow: true });
   } catch (err) {
     console.warn("API /banners request failed:", err);
     return { success: false, data: [] };
@@ -287,7 +301,7 @@ export async function getBanners() {
 // ── Locations ──
 export async function getDivisions() {
   try {
-    return await fetchFromApi<{ success: boolean; data: ApiDivision[] }>("/divisions");
+    return await fetchFromApi<{ success: boolean; data: ApiDivision[] }>("/divisions", { suppressThrow: true });
   } catch (err) {
     console.warn("API /divisions request failed:", err);
     return { success: false, data: [] };
@@ -297,7 +311,7 @@ export async function getDivisions() {
 export async function getDistricts(divisionId?: number | string) {
   const endpoint = divisionId ? `/districts?division_id=${divisionId}` : "/districts";
   try {
-    return await fetchFromApi<{ success: boolean; data: ApiDistrict[] }>(endpoint);
+    return await fetchFromApi<{ success: boolean; data: ApiDistrict[] }>(endpoint, { suppressThrow: true });
   } catch (err) {
     console.warn(`API ${endpoint} request failed:`, err);
     return { success: false, data: [] };
@@ -307,7 +321,7 @@ export async function getDistricts(divisionId?: number | string) {
 export async function getThanas(districtId?: number | string) {
   const endpoint = districtId ? `/thanas?district_id=${districtId}` : "/thanas";
   try {
-    return await fetchFromApi<{ success: boolean; data: ApiThana[] }>(endpoint);
+    return await fetchFromApi<{ success: boolean; data: ApiThana[] }>(endpoint, { suppressThrow: true });
   } catch (err) {
     console.warn(`API ${endpoint} request failed:`, err);
     return { success: false, data: [] };
@@ -317,7 +331,7 @@ export async function getThanas(districtId?: number | string) {
 // ── FAQs ──
 export async function getFaqs() {
   try {
-    return await fetchFromApi<{ success: boolean; data: ApiFaq[] }>("/faqs");
+    return await fetchFromApi<{ success: boolean; data: ApiFaq[] }>("/faqs", { suppressThrow: true });
   } catch (err) {
     console.warn("API /faqs request failed:", err);
     return { success: false, data: [] };
@@ -327,7 +341,7 @@ export async function getFaqs() {
 // ── Partners ──
 export async function getPartners() {
   try {
-    return await fetchFromApi<{ success: boolean; data: any[] }>("/partners");
+    return await fetchFromApi<{ success: boolean; data: any[] }>("/partners", { suppressThrow: true });
   } catch (err) {
     console.warn("API /partners request failed:", err);
     return { success: false, data: [] };
@@ -337,7 +351,7 @@ export async function getPartners() {
 // ── About Page ──
 export async function getAboutPage() {
   try {
-    return await fetchFromApi<{ success: boolean; data: any }>("/about");
+    return await fetchFromApi<{ success: boolean; data: any }>("/about", { suppressThrow: true });
   } catch (err) {
     console.warn("API /about request failed:", err);
     return { success: false, data: null };
@@ -405,7 +419,7 @@ export async function registerCustomer(data: { name: string; email?: string; pho
 }
 
 export async function getAuthProfile() {
-  return fetchFromApi<{ success: boolean; data: any }>("/auth/profile");
+  return fetchFromApi<{ success: boolean; data: any }>("/auth/profile", { suppressThrow: true });
 }
 
 export async function updateAuthProfile(payload: {
@@ -441,7 +455,7 @@ export async function deleteAuthAccount() {
 
 export async function getFooterSettings() {
   try {
-    return await fetchFromApi<{ success: boolean; data: ApiFooterSettings }>("/footer-settings");
+    return await fetchFromApi<{ success: boolean; data: ApiFooterSettings }>("/footer-settings", { suppressThrow: true });
   } catch (err) {
     console.warn("API /footer-settings request failed:", err);
     return { success: false, data: null as any };
@@ -485,7 +499,7 @@ export interface ApiContactSettings {
 
 export async function getContactSettings() {
   try {
-    return await fetchFromApi<{ success: boolean; data: ApiContactSettings }>("/contact-settings");
+    return await fetchFromApi<{ success: boolean; data: ApiContactSettings }>("/contact-settings", { suppressThrow: true });
   } catch (err) {
     console.warn("API /contact-settings request failed:", err);
     return { success: false, data: null as any };
